@@ -1,0 +1,78 @@
+services:
+  - type: web
+    name: ftd-backend
+    env: node
+    buildCommand: |
+      # Install system dependencies for GUI support
+      sudo apt-get update && sudo apt-get install -y \
+        xvfb \
+        x11-utils \
+        xauth \
+        dbus-x11 \
+        fonts-liberation \
+        libappindicator3-1 \
+        libasound2 \
+        libatk-bridge2.0-0 \
+        libdrm2 \
+        libgtk-3-0 \
+        libnspr4 \
+        libnss3 \
+        libxcomposite1 \
+        libxdamage1 \
+        libxrandr2 \
+        xdg-utils \
+        libxss1 \
+        libgconf-2-4 \
+        fluxbox &&
+      cd backend &&
+      npm install &&
+      cd .. &&
+      pip install -r requirements.txt &&
+      playwright install chromium &&
+      playwright install-deps
+    startCommand: |
+      # Start virtual display
+      Xvfb :99 -screen 0 1920x1080x24 -ac +extension GLX +render -noreset &
+      export DISPLAY=:99
+      sleep 3
+      fluxbox &
+      cd backend && npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        fromDatabase:
+          name: mongodb
+          property: connectionString
+      - key: AGENTS_REPORT_URI
+        fromDatabase:
+          name: mongodb
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRE
+        value: 30d
+      - key: PORT
+        value: 5000
+      - key: UPLOAD_PATH
+        value: ./uploads
+      - key: MAX_FILE_UPLOAD
+        value: 1000000
+      - key: RATE_LIMIT_WINDOW_MS
+        value: 900000
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: 100
+      - key: CORS_ORIGIN
+        value: https://ftd-omega.vercel.app
+      - key: PYTHONPATH
+        value: /opt/render/project/src
+      - key: DISPLAY
+        value: :99
+      - key: XVFB_WHD
+        value: 1920x1080x24
+    plan: starter
+    
+databases:
+  - name: mongodb
+    databaseName: project-management
+    user: admin 

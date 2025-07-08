@@ -1,0 +1,1007 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.4.0/jquery.js"></script>
+
+    <script> gvars = { gi: 17, ci: 1, wl: 17, rd: 2, ap: 0, ae: 0, lg: "en", ai: 2958032 }; </script>
+    <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12/dist/vue.js"></script>
+    <script src="https://unpkg.com/@webcomponents/webcomponentsjs@2.6.0/webcomponents-loader.js"></script>
+    <div class="gaff2" id="caff"></div>
+    <div class="gaff"></div>
+    <script src="/trackbot.js"></script>
+    <style type="text/css">
+        .valid {
+            border: 1px solid green;
+            background-color: white !important;
+        }
+
+        .notvalid {
+            border: 1px solid red !important;
+        }
+
+        .notvalidphone {
+            background-color: rgb(253, 164, 164) !important;
+            border: 1px solid red !important;
+        }
+
+        .initial {
+            border: 1px solid gray !important;
+        }
+    </style>
+
+
+    <style>
+        .form-phone {
+            display: flex;
+        }
+
+        #kabelname::placeholder {
+            font-weight: bold;
+
+            color: #000;
+        }
+
+        input::placeholder {
+            font-weight: bold;
+
+            color: #000;
+        }
+
+        select.selct {
+            height: 40px;
+        }
+
+        option.belgium {
+            padding-left: 30px;
+            background: url(land/belgium.png);
+            background-size: 20px 20px;
+        }
+
+        option.united_kingdom {
+            padding-left: 30px;
+            background: url(land/united-kingdom.png);
+            background-size: 20px 20px;
+        }
+
+        option.malaysia {
+            padding-left: 30px;
+            background: url(land/malaysia.png);
+            background-size: 20px 20px;
+        }
+
+        option.finland {
+            padding-left: 30px;
+            background: url(land/finland.png);
+            background-size: 20px 20px;
+        }
+
+        option.netherlands {
+            padding-left: 30px;
+            background: url(land/netherlands.png);
+            background-size: 20px 20px;
+        }
+
+        option.norway {
+            padding-left: 30px;
+            background: url(land/norway.png);
+            background-size: 20px 20px;
+        }
+
+        option.new_zealand {
+            padding-left: 30px;
+            background: url(land/new-zealand.png);
+            background-size: 20px 20px;
+        }
+
+        option.canada {
+            padding-left: 30px;
+            background: url(land/canada.png);
+            background-size: 20px 20px;
+        }
+
+        option.denmark {
+            padding-left: 30px;
+            background: url(land/denmark.png);
+            background-size: 20px 20px;
+        }
+
+        option.germany {
+            padding-left: 30px;
+            background: url(land/germany.png);
+            background-size: 20px 20px;
+        }
+
+        option.iceland {
+            padding-left: 30px;
+            background: url(land/iceland.png);
+            background-size: 20px 20px;
+        }
+
+        option.australia {
+            padding-left: 30px;
+            background: url(land/australia.png);
+            background-size: 20px 20px;
+        }
+    </style>
+
+    <title>QuantumAI</title>
+    <link rel="stylesheet" href="land/css/animate.min.css">
+    <link id="aos-style-link" href="land/css/aos.css" rel="stylesheet">
+    <link rel="stylesheet" href="land/css/style.css">
+    <link rel="stylesheet" href="land/css/bootstrap.min.css">
+    <link rel="stylesheet" href="land/css/trades.css">
+    <link rel="stylesheet" href="land/css/custom.css">
+    <link rel="stylesheet" href="land/css/intgrtn.css">
+    <link rel="stylesheet" href="land/css/form.css">
+    <link rel="stylesheet" href="./css/flags.css">
+
+    <link rel="stylesheet" href="./css/intlTelInput.css">
+    <link rel="stylesheet" href="./css/form.css">
+
+
+
+</head>
+
+<body data-aos-easing="ease" data-aos-duration="400" data-aos-delay="0" style="overflow: auto;">
+    <iframe width="0" height="0" style="display: none" src=""></iframe>
+    <header class="header header--sticky">
+        <div class="header__wrapper">
+            <div
+                style="display: inline-block;position: absolute;top: 4px;left: 50%;transform: translateX(-50%);font-size: .5em;opacity: .5;font-family: inherit;color: #fff;">
+                <span style="font-size: 12px;" class="topTextASet">-&nbsp;Advertorial&nbsp;<a
+                        href="land/abuse_report.html" target="_blank"
+                        style="font: inherit;color: inherit;text-decoration: inherit;">&amp;&nbsp;DMCA&nbsp;Protected</a>&nbsp;-</span>
+            </div>
+            <div class="header__logo aos-init aos-animate" data-aos="fade-zoom-in" data-aos-easing="ease-in-out"
+                data-aos-duration="1000">
+                <svg width="140" height="62" viewBox="0 0 124.2 42">
+
+                    <path d="M52.2,14.7c0.1,0.1,0.4,0.3,0.7,0.3c0.5,0,1.1-0.4,1.1-1.1v-2c0-2.8-2.2-5.2-5.2-5.2h-3.7V3c0-0.9-0.4-1.7-1.2-2.4
+                c-0.7-0.5-1.6-0.8-2.5-0.7L10,6.9c-2.4,0.4-4.2,2.5-4.2,5v25c0,2.8,2.2,5.2,5.2,5.2h38c2.8,0,5.2-2.2,5.2-5.2v-2.4
+                c0-0.3-0.1-0.5-0.3-0.7c-0.1-0.1-0.4-0.3-0.7-0.3c-0.5,0-1.1,0.4-1.1,1.1V37c0,1.7-1.5,3-3,3H10.9c-1.7,0-3-1.3-3-3V11.9
+                c0-1.6,1.2-2.8,2.6-3c0.1,0,0.3,0,0.5,0h38c1.7,0,3,1.3,3,3V14C52,14.3,52.1,14.5,52.2,14.7 M20,6.7L41.9,2c0.3,0,0.7,0,0.8,0.3
+                C43,2.4,43.1,2.8,43.1,3v3.7C43.1,6.7,20,6.7,20,6.7z" />
+                    <path d="M25.4,32c-2-0.5-4-1.1-5.7-1.7c-0.3-0.1-0.6-0.2-0.9-0.2c-3.5-0.1-6.5-2.7-6.5-7.5c0-4.8,2.9-7.8,6.9-7.8
+                c4,0,6.6,3.1,6.6,7.5c0,3.8-1.8,6.2-4.2,7.1v0.1c1.5,0.4,3.1,0.7,4.3,0.9L25.4,32z M23.8,22.4c0-3-1.5-6-4.7-6c-3.2,0-4.8,3-4.8,6.2
+                c0,3.1,1.7,6,4.7,6C22.1,28.5,23.8,25.8,23.8,22.4z" />
+                    <path d="M37.6,27c0,1.1,0,2.1,0.1,2.9h-1.7l-0.1-1.7h0c-0.5,0.9-1.6,2-3.5,2c-1.7,0-3.7-0.9-3.7-4.7v-6.2h1.9v5.9
+                c0,2,0.6,3.4,2.4,3.4c1.3,0,2.2-0.9,2.6-1.8c0.1-0.3,0.2-0.6,0.2-1v-6.5h1.9V27z" />
+                    <path d="M47,29.9l-0.2-1.3h-0.1c-0.6,0.8-1.7,1.6-3.3,1.6c-2.2,0-3.3-1.5-3.3-3.1c0-2.6,2.3-4,6.4-4v-0.2c0-0.9-0.2-2.5-2.4-2.5
+                c-1,0-2,0.3-2.8,0.8L41,19.9c0.9-0.6,2.2-0.9,3.5-0.9c3.3,0,4,2.2,4,4.4v4c0,0.9,0,1.8,0.2,2.6H47z M46.7,24.4
+                c-2.1,0-4.5,0.3-4.5,2.4c0,1.3,0.8,1.8,1.8,1.8c1.4,0,2.3-0.9,2.6-1.8c0.1-0.2,0.1-0.4,0.1-0.6V24.4z" />
+                    <path d="M52.1,22.1c0-1.1,0-2-0.1-2.9h1.7l0.1,1.8h0c0.5-1,1.8-2,3.5-2c1.5,0,3.8,0.9,3.8,4.5v6.4h-1.9v-6.1c0-1.7-0.6-3.1-2.5-3.1
+                c-1.3,0-2.3,0.9-2.6,2c-0.1,0.2-0.1,0.6-0.1,0.9v6.4h-1.9V22.1z" />
+                    <path d="M66.9,16.2v3.1h2.8v1.5h-2.8v5.7c0,1.3,0.4,2.1,1.5,2.1c0.5,0,0.9-0.1,1.1-0.1l0.1,1.5c-0.4,0.2-1,0.3-1.7,0.3
+                c-0.9,0-1.6-0.3-2.1-0.8c-0.5-0.6-0.7-1.5-0.7-2.8v-5.8h-1.7v-1.5H65v-2.6L66.9,16.2z" />
+                    <path d="M81.1,27c0,1.1,0,2.1,0.1,2.9h-1.7l-0.1-1.7h0c-0.5,0.9-1.6,2-3.5,2c-1.7,0-3.7-0.9-3.7-4.7v-6.2H74v5.9
+                c0,2,0.6,3.4,2.4,3.4c1.3,0,2.2-0.9,2.6-1.8c0.1-0.3,0.2-0.6,0.2-1v-6.5h1.9V27z" />
+                    <path d="M84.7,22.1c0-1.1,0-2-0.1-2.9h1.7l0.1,1.7h0.1c0.6-1,1.6-2,3.3-2c1.5,0,2.6,0.9,3,2.1h0c0.3-0.6,0.7-1.1,1.2-1.4
+                c0.6-0.5,1.3-0.7,2.4-0.7c1.4,0,3.5,0.9,3.5,4.6v6.3H98v-6c0-2-0.7-3.3-2.3-3.3c-1.1,0-2,0.8-2.3,1.8c-0.1,0.3-0.2,0.6-0.2,1v6.6
+                h-1.9v-6.4c0-1.7-0.7-2.9-2.2-2.9c-1.2,0-2.1,1-2.4,1.9c-0.1,0.3-0.2,0.6-0.2,0.9v6.4h-1.9V22.1z" />
+                    <path d="M105.8,25.2l-1.5,4.7h-2l5-14.8h2.3l5.1,14.8h-2l-1.6-4.7H105.8z M110.7,23.7l-1.5-4.3c-0.3-1-0.6-1.8-0.8-2.7h0
+                c-0.2,0.9-0.5,1.8-0.7,2.7l-1.5,4.3H110.7z" />
+                    <path d="M119.1,15v14.8h-1.9V15H119.1z" />
+
+                </svg>
+            </div>
+            <nav class="header__nav">
+            </nav>
+            <div class="header__user aos-init aos-animate" data-aos="fade-zoom-in" data-aos-easing="ease-in-out"
+                data-aos-duration="1000" data-aos-delay="1050">
+                <a class="header__auth button button--sm scroll-to-form"
+                    style="cursor:pointer; background-color: #ffc600;">Create
+                    account</a>
+            </div>
+            <button class="header__hamburger hamburger hamburger--emphatic" type="button">
+                <a class="header__auth button button--sm scroll-to-form"
+                    style="cursor:pointer; background-color: #ffc600;">Create
+                    account</a>
+            </button>
+        </div>
+    </header>
+
+    <main>
+
+        <section class="section promo promo-main">
+            <div class="modal-promo">
+                <div class="modal-join modal-join--visible">
+                    <div class="modal-wrapper">
+                        <div class="modal-wrapper__content">
+                            <button type="button" class="close-btn close-btn--white"></button>
+                            <div class="modal-wrapper__inner modal-wrapper__inner--form">
+
+                                <div class="embed-responsive embed-responsive-16by9">
+                                    <div class="video">
+                                        <div class="video__inner">
+                                            <div class="hero-video__settings">
+                                                
+                                                
+                                            </div>
+                                            
+                                            
+                                            
+                                            
+                                            <video id="video" src="land/video/video.mp4" controls></video>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="modal-wrapper__inner modal-wrapper__inner--hidden modal-wrapper__inner--done">
+                            <p class="modal-title">Your request has been sent</p>
+                            <p class="modal-text">Thank you for your interest in Wulet. We'll review the application
+                                within 48 hours
+                            </p>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            </div>
+            <div class=" wrapper">
+                <div class="promo__wrap">
+                    <div class="promo__head">
+                        <h1 data-aos="fade-right" data-aos-offset="200" data-aos-delay="400" data-aos-duration="1000"
+                            data-aos-easing="ease-out" class="aos-init aos-animate">Smart Investing<br>That Makes You
+                            <br><span class="currency">$</span>1500 in 5
+                            Hours<br>
+                            And Cures Poverty
+                        </h1>
+                        <p data-aos="fade-right" data-aos-offset="200" data-aos-delay="600" data-aos-duration="1000"
+                            data-aos-easing="ease-out" class="aos-init aos-animate">Our smart investing can make you
+                            thousands in less
+                            than 7 days, and will help cure poverty while you earn!</p>
+                    </div>
+                    <div class="promo__svg">
+                        <div class="play-btn-wrap">
+                            <img class="play-btn" data-src="id_12345" src="land/images/play-button.svg">
+                        </div>
+                        <img src="land/images/mainpic.svg">
+                    </div>
+                </div>
+
+                <div class="promo__middle" id="signin">
+                    <div class="promo__middle-left aos-init form-div aos-animate" data-aos-offset="-200"
+                        data-aos="fade-zoom-in" data-aos-easing="ease-in-out" data-aos-duration="1000"
+                        data-aos-delay="700">
+                        <div class="form">
+                            <div class="form--top ">
+                                <h2 class="form--title">
+                                    SIGN UP FOR FREE
+                                </h2>
+                            </div>
+                            <form onsubmit="event.preventDefault(); onLeadSubmit(this, false); return false"
+                                id="myform1" class="register-form neo_form">
+                                <div class="preloader"></div>
+                                <div class="form--row">
+                                    <div class="form--controlWrapper form--controlWrapper-half">
+                                        <input name="name" type="text" class="form--input" autocomplete="off"
+                                            placeholder=" " required minlength="2">
+                                        <span class="form--floatingLabel">First Name</span>
+                                    </div>
+                                    <div class="form--controlWrapper form--controlWrapper-half">
+                                        <input name="lastname" type="text" class="form--input" autocomplete="off"
+                                            placeholder=" " required minlength="2">
+                                        <span class="form--floatingLabel">Last Name</span>
+                                    </div>
+                                </div>
+                                <div class="form--controlWrapper ">
+                                    <input name="email" type="email" class="form--input" autocomplete="off"
+                                        placeholder=" " required>
+                                    <span class="form--floatingLabel">Email</span>
+                                </div>
+
+                                <div class="form--controlWrapper form-phone" style="height: 40px">
+                                    <input type="hidden" id="myText-1" name="params[phc]" value="32" />
+                                    <input name="phone" type="tel" class="phone form--input" id="kabelname-1" value=""
+                                        required>
+                                </div>
+                                <div class="form--controlWrapper ">
+                                    <button name="submitBtn" type="submit" class="btn form--btn btn_send">
+                                        Register
+                                    </button>
+                                </div>
+                                <div class="checkbox-svg">
+                                    <input type="checkbox" id="cbx-3" style="display: none;">
+                                    <label for="cbx-3" class="checked-svg">
+                                        <svg width="20px" height="20px" viewBox="0 0 18 18">
+                                            <path
+                                                d="M1,9 L1,3.5 C1,2 2,1 3.5,1 L14.5,1 C16,1 17,2 17,3.5 L17,14.5 C17,16 16,17 14.5,17 L3.5,17 C2,17 1,16 1,14.5 L1,9 Z">
+                                            </path>
+                                            <polyline points="1 9 7 14 15 4"></polyline>
+                                        </svg>
+                                    </label>
+                                    <div class="privacy-checkbox privacy-checkbox_main">
+                                        <p>By registration I agree and accept
+                                            <a href="terms.html" target="_blank"> Website terms </a> of use and <a href="
+                                                privacy.html" target="_blank"> Privacy Policy.</a>
+                                        </p>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                    <div class="promo__middle-right aos-init aos-animate" data-aos="fade-zoom-in"
+                        data-aos-easing="ease-in-out" data-aos-duration="1000" data-aos-offset="-200"
+                        data-aos-delay="900">
+                        <a class="ios-button" href="#">
+                            <div class="ios-button__img">
+                                <img class="lozad" data-src="img/apple-logo.png" data-src="id_12345"
+                                    src="land/images/qce_logo_150dpi.png" data-loaded="true">
+                            </div>
+                            <div class="ios-button__text">
+                                <span>World's first Quantum computer</span>
+                                <span>is now LIVE!</span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            <div class="promo__footer aos-init aos-animate" data-aos="fade-up" data-aos-offset="0" data-aos-delay="800"
+                data-aos-duration="1000" data-aos-easing="ease-out">
+                <div class="promo__info wrapper">
+                    <div id="live-trades" class="trades-wrapper" v-bind:class="{ active: showApp }">
+                        <div class="trades-div">
+                            <div class="live-trades">
+                                <div class="header-person " data-init="person-timeout1">
+                                    <div v-bind:id="trade.id" class="item animated slideInRight"
+                                        v-for="trade in currentTrades">
+                                        <div class="person-image ">
+                                            <img src="land/users/portraits/multi/med/men/33.jpg" alt="Person">
+                                        </div>
+                                        <div class="info">
+                                            <div class="won-info">
+                                                <span class="person-text--name name">User Saddle Dr</span><br>
+                                                won <span class="person-text--sum">
+                                                    <span class="currency">$</span>
+                                                    <span class="sum sum1">815</span>
+                                                </span>
+                                            </div>
+                                            <div class="balance ">
+                                                <b>Current balance: <span class="currency">$</span><span
+                                                        class="randomBalance">...</span></b>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class=" header-person" data-init="person-timeout2">
+                                    <div v-bind:id="trade.id" class="item item3 animated slideInRight"
+                                        v-for="trade in currentTrades">
+                                        <div class="person-image">
+                                            <img src="land/users/portraits/multi/med/men/89.jpg" data-src="id_12345"
+                                                alt="Person">
+                                        </div>
+                                        <div class="info">
+                                            <div class="won-info">
+                                                <span class="person-text--name name">User Mathew</span><br>
+                                                won <span class="person-text--sum">
+                                                    <span class="currency">$</span>
+                                                    <span class="sum">1764</span>
+                                                </span>
+                                            </div>
+                                            <div class="balance ">
+                                                <b>Current balance: <span class="currency">$</span><span
+                                                        class="randomBalance">...</span></b>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class=" header-person" data-init="person-timeout3">
+                                    <div v-bind:id="trade.id" class="item item2 animated slideInRight"
+                                        v-for="trade in currentTrades">
+                                        <div class="person-image">
+                                            <img src="land/users/portraits/multi/med/women/29.jpg" alt="Person">
+                                        </div>
+                                        <div class="info">
+                                            <div class="won-info">
+                                                <span class="person-text--name name">User Avondale Ave</span><br>
+                                                won <span class="person-text--sum">
+                                                    <span class="currency">$</span>
+                                                    <span class="sum">578</span>
+                                                </span>
+                                            </div>
+                                            <div class="balance ">
+                                                <b>Current balance: <span class="currency">$</span><span
+                                                        class="randomBalance">...</span></b>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class=" header-person" data-init="person-timeout4">
+                                    <div v-bind:id="trade.id" class="item item2 animated slideInRight"
+                                        v-for="trade in currentTrades">
+                                        <div class="person-image">
+                                            <img src="land/users/portraits/multi/med/women/70.jpg" data-src="id_12345"
+                                                alt="Person">
+                                        </div>
+                                        <div class="info">
+                                            <div class="won-info">
+                                                <span class="person-text--name name">User Naomi</span><br>
+                                                won <span class="person-text--sum">
+                                                    <span class="currency">$</span>
+                                                    <span class="sum">4927</span>
+                                                </span>
+                                            </div>
+                                            <div class="balance ">
+                                                <b>Current balance: <span class="currency">$</span><span
+                                                        class="randomBalance">...</span></b>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section solution">
+            <h2 class="visually-hidden">Solution</h2>
+            <div class="solution__top wrapper" id="problem">
+                <p class="solution__title aos-init" data-aos="fade-right" data-aos-offset="0" data-aos-duration="1500"
+                    data-aos-easing="ease-out">Problem</p>
+                <div class="solution__top-wrap">
+                    <div class="solution__item">
+                        <div data-aos="fade-zoom-in" data-aos-easing="ease-in-out" data-aos-offset="0"
+                            data-aos-duration="1200" class="aos-init">
+                            <h2>1</h2>
+                            <p>Poverty is a global issue, one which we aim to solve – forever. When you invest with
+                                <span class="currency">$</span>250, you’re
+                                directly helping us save people’s lives – and making money!
+                            </p>
+                        </div>
+                        <div class="triangle-item triangle-item--left aos-init" data-aos="fade-up" data-aos-offset="0"
+                            data-aos-delay="200" data-aos-duration="1000" data-aos-easing="ease-out">
+                            <div class="triangle-item__img">
+                                <img class="lozad" data-src="img/brand.png" alt="deloitte" src="land/images/brand.png"
+                                    data-loaded="true">
+                            </div>
+                            <a class="triangle-item__link" href="#" target="_blank">Delloite link</a>
+                        </div>
+                    </div>
+                    <div class="solution__item">
+                        <div data-aos="fade-zoom-in" data-aos-easing="ease-in-out" data-aos-offset="0"
+                            data-aos-duration="1200" data-aos-delay="150" class="aos-init">
+                            <h2>2</h2>
+                            <p>Big corporations are the ones holding all the keys to those big paychecks. With Quantum
+                                Computing,
+                                that’s no longer true. Now YOU have the power to make a great income. The power that was
+                                once reserve
+                                for the richest among us, is now yours.</p>
+                        </div>
+                        <div class="triangle-item triangle-item--middle aos-init" data-aos="fade-up" data-aos-offset="0"
+                            data-aos-delay="400" data-aos-duration="1000" data-aos-easing="ease-out">
+                            <div class="triangle-item__img">
+                                <img class="lozad" data-src="img/brand2.png" data-src="id_12345" alt="Bond"
+                                    src="land/images/brand2.png" data-loaded="true">
+                            </div>
+                            <a class="triangle-item__link" href="#" target="_blank">Bond link</a>
+                        </div>
+                    </div>
+                    <div class="solution__item">
+                        <div data-aos="fade-zoom-in" data-aos-easing="ease-in-out" data-aos-offset="0"
+                            data-aos-duration="1200" data-aos-delay="300" class="aos-init">
+                            <h2>3</h2>
+                            <p>QuantumAI is designed to make the world better. Elon developed this idea as a win-win.
+                                Have loans to
+                                pay off, or a mortgage to pay? Want to help people? Now you can do both.</p>
+                        </div>
+                        <div class="triangle-item triangle-item--right aos-init" data-aos="fade-up" data-aos-offset="0"
+                            data-aos-delay="600" data-aos-duration="1000" data-aos-easing="ease-out">
+                            <div class="triangle-item__img">
+                                <img class="lozad" data-src="img/brand3.png" alt="Colloquy" src="land/images/brand3.png"
+                                    data-loaded="true">
+                            </div>
+                            <a class="triangle-item__link" href="#" target="_blank">Colloquy link</a>
+                        </div>
+                    </div>
+                    <div class="solution__item">
+                        <div data-aos="fade-zoom-in" data-aos-easing="ease-in-out" data-aos-offset="0"
+                            data-aos-duration="1200" data-aos-delay="350" class="aos-init">
+                            <h2>4</h2>
+                            <p>A country’s economy is so fragile. As you saw in 2008, it only takes a few people at the
+                                top to ruin
+                                it. We want to stop that from happening ever again.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="solution__bottom">
+                <div class="solution__triangle">
+                    <div class="wrapper">
+
+                    </div>
+                </div>
+                <div class="solution__bottom-wrap wrapper" id="solution">
+                    <p class="solution__title solution__title--white aos-init" data-aos="fade-right" data-aos-offset="0"
+                        data-aos-duration="1500" data-aos-easing="ease-out">Solution</p>
+                    <div class="solution__decor aos-init" data-aos-offset="200" data-aos="fade-zoom-in"
+                        data-aos-easing="ease-in-out" data-aos-duration="1000" data-aos-delay="100">
+                        <p>
+                            By using the power of Quantum Computing, you can help us take the exclusivity of the top 1%,
+                            and solve 4
+                            major problems: Develop a stable, wealthy economy for all, cure poverty, level the playing
+                            ground for all
+                            (not just the richest), and help you make your financial
+                            dreams
+                            come true!
+                        </p>
+                        <span class="solution__decor-triangle"></span>
+                        <span class="solution__decor-triangle solution__decor-triangle--always-visible"></span>
+                        <span class="solution__decor-triangle"></span>
+                    </div>
+                </div>
+                <div class="solution__steps">
+                    <div class="wrapper solution__steps-wrap">
+                        <h2>So, what do you need to do to start?</h2>
+                        <div class="solution__step aos-init" data-aos="slide-left" data-aos-easing="ease-in-out"
+                            data-aos-offset="0" data-aos-duration="1200">
+
+                            <span class="solution__step-num">1</span>
+                            <span class="solution__step-title">Deposit</span>
+                            <p class="solution__step-text">Deposit 250 Dollars.</p>
+                        </div>
+                        <div class="solution__step aos-init" data-aos="slide-right" data-aos-easing="ease-in-out"
+                            data-aos-offset="0" data-aos-duration="1200" data-aos-delay="250">
+                            <span class="solution__step-num solution__step-num--middle">2</span>
+                            <span class="solution__step-title">Pick</span>
+                            <p class="solution__step-text">Pick the trades QuantumAI recommends (with the power of
+                                Quantum Computing!)
+                            </p>
+                        </div>
+                        <div class="solution__step aos-init" data-aos="slide-left" data-aos-easing="ease-in-out"
+                            data-aos-offset="0" data-aos-duration="1200" data-aos-delay="500">
+                            <span class="solution__step-num">3</span>
+                            <span class="solution__step-title">Withdraw</span>
+                            <p class="solution__step-text">Withdraw any funds in matter of hours!</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+
+        <section class="section technology" id="technology">
+            <div class="wrapper technology__header">
+                <h2 data-aos="fade-right" data-aos-offset="0" data-aos-duration="1500" data-aos-easing="ease-out"
+                    class="aos-init">What Makes Quantum Computing So Good For Investing</h2>
+                <p>This is the world’s first quantum computing machine; unlike your home PC, this computer is smart – it
+                    makes
+                    thousands of simultaneous ‘decisions’ at once. Your brain thinks one thought at a time, in a
+                    sequence. Imagine
+                    if you could have thousands of thoughts at once, each as clear
+                    as
+                    the other. That’s quantum computing.</p>
+                <p>Using that power, our quantum computing machine will help you make smarter trades and make more money
+                    than
+                    you thought possible. Even better, it’s designed so that you can make money and help others while
+                    you profit!
+                </p>
+                <p>It finds trades by analysing differentials between stock prices every nano-second that stock markets
+                    are live
+                    (and makes predictions even when the markets are closed, so you’ll know what’s likely to happen when
+                    they
+                    re-open). Your current computer (and everyone else’s) can’t match
+                    the
+                    decision speeds of this new system.</p>
+                <p>Sign up, and be one of the exclusive few using this technology (before everyone else gets wind of
+                    it!)</p>.
+            </div>
+        </section>
+
+
+        <section class="section advisors" id="advisors">
+            <div class="wrapper">
+                <h2 class="text-white aos-init" data-aos="fade-right" data-aos-offset="0" data-aos-duration="1500"
+                    data-aos-easing="ease-out">Advisors</h2>
+                <div class="swiper-container js-advisors-slider">
+                    <div class="advisors__wrap swiper-wrapper">
+                        <div class="advisor-item swiper-slide">
+                            <div class="advisor-item__wrap aos-init" data-aos="fade-right" data-aos-offset="0"
+                                data-aos-duration="1000" data-aos-easing="ease-out">
+                                <div class="advisor-item__top">
+                                    <div class="advisor-item__img">
+                                        <img class="lozad" data-src="img/team/c2.jpg" data-src="id_12345"
+                                            alt="Vladimir Tikhomirov" src="land/images/c2.jpg" data-loaded="true">
+                                    </div>
+                                    <div class="advisor-item__info">
+                                        <p class="advisor-item__name">Jeff Bezos:</p>
+                                        <p class="advisor-item__position">Technology entrepreneur, investor, and
+                                            philanthropist</p>
+                                        <a href="#">
+                                            <svg width="26" height="26" viewBox="0 1 24 23">
+
+
+                                                <ellipse cx="2.5" cy="3.5" rx="2.48" ry="2.5" />
+                                                <path
+                                                    d="M12.982,10.155V8H8.014v16h4.969v-8.399c0-4.67,6.029-5.052,6.029,0V24H24V13.869C24,5.989,15.078,6.276,12.982,10.155z" />
+                                                <rect y="8" width="5" height="16" />
+                                            </svg>
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="advisor-item__bottom">
+                                    <p>
+                                        Quantum computing is the future. I’m not exaggerating when I say it will change
+                                        everything. This is
+                                        the early days of quantum computing; not many people know about it, which means
+                                        very few are using
+                                        it. The few that are, are making incredibly wise (and
+                                        profitable)
+                                        decisions.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="advisor-item swiper-slide">
+                            <div class="advisor-item__wrap aos-init" data-aos="fade-left" data-aos-offset="0"
+                                data-aos-duration="1000" data-aos-delay="250" data-aos-easing="ease-out">
+                                <div class="advisor-item__top">
+                                    <div class="advisor-item__img">
+                                        <img class="lozad" data-src="img/team/c1.jpg" data-src="id_12345"
+                                            alt="Tom Kojima" src="land/images/c1.jpg" data-loaded="true">
+                                    </div>
+                                    <div class="advisor-item__info">
+                                        <p class="advisor-item__name">Bill Gates:</p>
+                                        <p class="advisor-item__position">Business magnate, investor, author,
+                                            philanthropist, and
+                                            humanitarian</p>
+                                        <a href="#">
+                                            <svg width="26" height="26" viewBox="0 1 24 23">
+
+
+                                                <ellipse cx="2.5" cy="3.5" rx="2.48" ry="2.5" />
+                                                <path
+                                                    d="M12.982,10.155V8H8.014v16h4.969v-8.399c0-4.67,6.029-5.052,6.029,0V24H24V13.869C24,5.989,15.078,6.276,12.982,10.155z" />
+                                                <rect y="8" width="5" height="16" />
+                                            </svg>
+                                        </a>
+                                    </div>
+                                </div>
+                                <div class="advisor-item__bottom">
+                                    <p>
+                                        I know for a fact Elon has spent <span class="currency">$</span>3 billion of his
+                                        own money to fund
+                                        this program. Hats off to him
+                                        for that – that’s <span class="currency">$</span>3 billion of his own money to
+                                        fund a better future
+                                        for everyone, and to help
+                                        others make profits that’ll help him do so! It’s a win-win, and
+                                        I’m
+                                        very excited to see where it goes.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="swiper-pagination advisors__pagination"></div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section partners">
+            <div class="wrapper wrapper--mobile">
+                <h2>Partners</h2>
+                <div class="swiper-container js-partner-slider swiper-container-horizontal">
+                    <div class="partners__wrap swiper-wrapper" style="transform: translate3d(0px, 0px, 0px);">
+                        <div class="partner-item swiper-slide swiper-slide-active">
+                            <div class="partner-item__logo">
+                                <img class="lozad" data-src="img/ll1.png" alt="#" src="land/images/ll1.png"
+                                    data-loaded="true">
+                            </div>
+                        </div>
+                        <div class="partner-item swiper-slide swiper-slide-next">
+                            <div class="partner-item__logo">
+                                <img class="lozad" data-src="img/ll2.png" data-src="id_12345" alt="#"
+                                    src="land/images/ll2.png" data-loaded="true">
+                            </div>
+                        </div>
+                        <div class="partner-item swiper-slide">
+                            <div class="partner-item__logo">
+                                <img class="lozad" data-src="img/ll3.png" alt="#" src="land/images/ll3.png"
+                                    data-loaded="true">
+                            </div>
+                        </div>
+                    </div>
+                    <span class="swiper-notification" aria-live="assertive" aria-atomic="true"></span>
+                </div>
+
+            </div>
+        </section>
+
+
+    </main>
+    <footer class="footer" id="contacts">
+        <div class="wrapper">
+            <div class="container">
+                <div class="formhere">
+
+                    <section class="footer__content">
+                        <div class="form">
+                            <div class="form--top ">
+                                <h2 class="form--title">
+                                    SIGN UP FOR FREE
+                                </h2>
+                            </div>
+                            <form onsubmit="event.preventDefault(); onLeadSubmit(this, false); return false"
+                                id="myform2" class="register-form neo_form">
+                                <input type="hidden" id="fullphone2" name="full_number2" value="" />
+                                <div class="preloader"></div>
+                                <div class="form--row">
+                                    <div class="form--controlWrapper form--controlWrapper-half">
+                                        <input name="name" type="text" class="form--input" autocomplete="off"
+                                            placeholder=" " required minlength="2">
+                                        <span class="form--floatingLabel">First Name</span>
+                                    </div>
+                                    <div class="form--controlWrapper form--controlWrapper-half">
+                                        <input name="lastname" type="text" class="form--input" autocomplete="off"
+                                            placeholder=" " required minlength="2">
+                                        <span class="form--floatingLabel">Last Name</span>
+                                    </div>
+                                </div>
+                                <div class="form--controlWrapper ">
+                                    <input name="email" type="email" class="form--input" autocomplete="off"
+                                        placeholder=" " required>
+                                    <span class="form--floatingLabel">Email</span>
+                                </div>
+
+                                <div class="form--controlWrapper form-phone" style="height: 40px">
+                                    <input type="hidden" id="myText-2" name="params[phc]" value="32" />
+                                    <input name="phone" type="tel" data-code="+61" class="phone form--input"
+                                        id="kabelname-2" value="" required>
+                                </div>
+                                <div class="form--controlWrapper ">
+                                    <button name="submitBtn" type="submit" class="btn form--btn btn_send">
+                                        Register
+                                    </button>
+                                </div>
+                                <div class="checkbox-svg">
+                                    <input type="checkbox" id="cbx-3" style="display: none;">
+                                    <label for="cbx-3" class="checked-svg">
+                                        <svg width="20px" height="20px" viewBox="0 0 18 18">
+                                            <path
+                                                d="M1,9 L1,3.5 C1,2 2,1 3.5,1 L14.5,1 C16,1 17,2 17,3.5 L17,14.5 C17,16 16,17 14.5,17 L3.5,17 C2,17 1,16 1,14.5 L1,9 Z">
+                                            </path>
+                                            <polyline points="1 9 7 14 15 4"></polyline>
+                                        </svg>
+                                    </label>
+                                    <div class="privacy-checkbox privacy-checkbox_main">
+                                        <p>By registration I agree and accept
+                                            <a href="terms.html" target="_blank"> Website terms </a> of use and <a href="
+                                                privacy.html" target="_blank"> Privacy Policy.</a>
+                                        </p>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </section>
+                </div>
+                <div class="footer__bottom">
+                    <div class="bottom__col">©QuantumAI</div>
+                    <div class="bottom__col">
+                        <a href="
+                    privacy.html" target="_blank" class="bottom__link">Privacy Policy</a> |
+                        <a href="terms.html" target="_blank" class="bottom__link ">Conditions</a> |
+                        <a href="land/abuse_report.html" target="_blank" class="bottom__link">Report Abuse/ Spam</a>
+                    </div>
+                </div>
+                <div class="footer_disclaimer">IMPORTANT: Earnings and Legal
+                    Disclaimers Earnings and income representations made by <span
+                        class="disclaimer-brand_name__new">Website</span>, (collectively “This Website”) only used as
+                    aspirational
+                    examples of your earnings potential. The success of those in the testimonials and other examples are
+                    exceptional results and therefore are not intended as a guarantee that you or others will achieve
+                    the same
+                    results. Individual results will vary and are entirely dependent on your use of
+                    <span class="disclaimer-brand_name__new">Website</span>. This Website is not responsible for your
+                    actions. You
+                    bear sole responsibility for your actions and decisions when using products and services and
+                    therefore you
+                    should always exercise caution and due diligence. You agree that this Website is not liable to you
+                    in any way
+                    for the results of using our services. See our Website terms of use for our full disclaimer of
+                    liability and
+                    other restrictions. Trading can generate notable benefits, however,
+                    it also involves the risk of partial/full loss of the invested capital, therefore, you should
+                    consider whether
+                    you can afford to invest. ©<span id="yearDisclaimerNew">2020</span><br />
+                    USA REGULATION NOTICE: Trading Forex, CFDs and Cryptocurrencies is not regulated within the United
+                    States.
+                    Invest in Crypto is not supervised or regulated by any financial agencies nor US agencies. Any
+                    unregulated
+                    trading activity by U.S. residents is considered unlawful. This Website does not accept customers
+                    located
+                    within the United States or
+                    holding an American citizenship. This Website is not responsible for actions of customers located
+                    within the
+                    United States or holding an American citizenship. Customers located within the United States or
+                    holding an
+                    American citizenship bear sole responsibility for their actions and decisions when using products
+                    and services
+                    of this Website. In any and all circumstances the choice to use the Website, the Service and/or the
+                    Software
+                    is under full responsibility of User, who should comply with the current legislation.
+
+                    <script type="text/javascript">
+                        var yearDisclaimerNew = new Date();
+                        document.getElementById("yearDisclaimerNew").innerHTML = yearDisclaimerNew.getFullYear();
+                        document.querySelectorAll(".disclaimer-brand_name__new").forEach(function (brandName) {
+                            brandName.innerHTML = location.hostname;
+                        })
+                    </script>
+                </div>
+            </div>
+        </div>
+        </div>
+    </footer>
+    <div class="hover-modal"></div>
+    <div id="popup_custom" class="popup_custom" style="visibility: hidden;">
+        <div class="popup_overlay"></div>
+        <a class="close_button">×</a>
+        <div class="popup_inner">
+            <div class="popup_content">
+                <div class="popup_content_inner">
+                    <div class="popup-content-wrapper">
+                        <div class="popup-header">
+                            <div class="title-p">
+                                You Just Made a BIG Mistake!
+                            </div>
+                            <div class="subtitle-p">
+                                This is Your <span>LAST CHANCE</span> to Join The QuantumAI and secure
+                                your
+                                financial future.
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form popup_form">
+                        <div class="form--top ">
+                            <h2 class="form--title">
+                                SIGN UP FOR FREE
+                            </h2>
+                        </div>
+                        <form onsubmit="event.preventDefault(); onLeadSubmit(this, false); return false" id="myform3"
+                            class="register-form neo_form">
+                            <div class="preloader"></div>
+                            <div class="form--row">
+                                <div class="form--controlWrapper form--controlWrapper-half">
+                                    <input name="name" type="text" class="form--input" autocomplete="off"
+                                        placeholder=" " required minlength="2">
+                                    <span class="form--floatingLabel">First Name</span>
+                                </div>
+                                <div class="form--controlWrapper form--controlWrapper-half">
+                                    <input name="lastname" type="text" class="form--input" autocomplete="off"
+                                        placeholder=" " required minlength="2">
+                                    <span class="form--floatingLabel">Last Name</span>
+                                </div>
+                            </div>
+                            <div class="form--controlWrapper ">
+                                <input name="email" type="email" class="form--input" autocomplete="off" placeholder=" "
+                                    required>
+                                <span class="form--floatingLabel">Email</span>
+                            </div>
+
+                            <div class="form--controlWrapper form-phone" style="height: 40px">
+                                <input type="hidden" id="myText-3" name="params[phc]" value="32" />
+                                <input name="phone" type="tel" data-code="+61" class="phone form--input"
+                                    id="kabelname-3" value="" required>
+                            </div>
+                            <div class="form--controlWrapper ">
+                                <button name="submitBtn" type="submit" class="btn form--btn btn_send">
+                                    Register
+                                </button>
+                            </div>
+                            <div class="checkbox-svg">
+                                <input type="checkbox" id="cbx-3" style="display: none;">
+                                <label for="cbx-3" class="checked-svg">
+                                    <svg width="20px" height="20px" viewBox="0 0 18 18">
+                                        <path
+                                            d="M1,9 L1,3.5 C1,2 2,1 3.5,1 L14.5,1 C16,1 17,2 17,3.5 L17,14.5 C17,16 16,17 14.5,17 L3.5,17 C2,17 1,16 1,14.5 L1,9 Z">
+                                        </path>
+                                        <polyline points="1 9 7 14 15 4"></polyline>
+                                    </svg>
+                                </label>
+                                <div class="privacy-checkbox privacy-checkbox_main">
+                                    <p>By registration I agree and accept
+                                        <a href="terms.html" target="_blank"> Website terms </a> of use and <a href="
+                                            privacy.html" target="_blank"> Privacy Policy.</a>
+                                    </p>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <link rel="stylesheet" href="land/css/checkbox-svg.css">
+    <link rel="stylesheet" href="land/css/popup.css">
+
+
+    <script src="land/js/aos.js"></script>
+
+    <script src="./libs/jquery-3.6.0.min.js"></script>
+    <script src="./libs/intlTelInput.js"></script>
+    <script src="./libs/utils.js"></script>
+    <script src="./libs/inputmask.min.js"></script>
+    <script src="./libs/jquery.maskedinput.js"></script>
+
+
+    <script src="land/js/currency.js"></script>
+
+    <script src="land/js/device.min.js"></script>
+
+    <script src="land/js/custom2.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+
+    <script>
+        $(function () {
+            $('.scroll-to-form').on("click", function (e) {
+                e.preventDefault();
+                $('html, body').animate({
+                    scrollTop: $("#signin").offset().top - 500
+                }, 1000);
+            });
+        })
+    </script>
+    <script>
+        AOS.init();
+    </script>
+
+
+    <script>
+
+        //Geo input Flags
+        const inputsPhone = document.querySelectorAll(".phone");
+        inputsPhone.forEach(phone => {
+            window.intlTelInput(phone, {
+                // allowDropdown: false,
+                // autoHideDialCode: true,
+                // autoPlaceholder: "on",
+                // dropdownContainer: document.body,
+                // excludeCountries: ["us"],
+                // formatOnDisplay: false,
+                // hiddenInput: "full_number",
+                geoIpLookup: function (callback) {
+                    $.get(
+                        "https://ipinfo.io/json?token=219a422f09ea70",
+                        function () {
+                        },
+                        "jsonp"
+                    ).always(function (resp) {
+                        const countryCode = resp && resp.country ? resp.country : "";
+                        document.querySelectorAll('input[name="code"]').forEach(item => item.value = countryCode);
+
+                        callback(countryCode);
+                    });
+                },
+                initialCountry: "auto",
+
+                hiddenInput: "full_number",
+
+                // localizedCountries: { 'de': 'Deutschland' },
+                // nationalMode: false,
+                // onlyCountries: ["us", "ca", "au"],
+                placeholderNumberType: "MOBILE",
+                preferredCountries: ["ca", "us", "au"],
+                separateDialCode: true,
+                utilsScript: "lending/build/js/utils.mjs",
+            });
+
+        })
+    </script>
+
+
+    <script src="./land/js/main.js?v=4"></script>
+    <script src="connector.js"></script>
+</body>
+
+</html>

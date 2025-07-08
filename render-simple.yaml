@@ -1,0 +1,33 @@
+# Render Deployment Configuration
+# Use this as a reference when setting up your service on Render
+
+# Service Configuration:
+# - Service Type: Web Service
+# - Environment: Node
+# - Build Command: ./build.sh
+# - Start Command: cd backend && npm start
+# - Auto-Deploy: Yes
+
+# Environment Variables to set in Render dashboard:
+# NODE_ENV=production
+# MONGODB_URI=<your_mongodb_connection_string>
+# AGENTS_REPORT_URI=<your_mongodb_connection_string>
+# JWT_SECRET=<generate_secure_random_string>
+# JWT_EXPIRE=30d
+# PORT=5000
+# UPLOAD_PATH=./uploads
+# MAX_FILE_UPLOAD=1000000
+# RATE_LIMIT_WINDOW_MS=900000
+# RATE_LIMIT_MAX_REQUESTS=100
+# CORS_ORIGIN=https://your-app-name.vercel.app
+# PYTHONPATH=/opt/render/project/src
+
+# Dockerfile alternative for custom runtime (optional)
+services:
+  - type: web
+    name: ftd-backend
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: NODE_ENV
+        value: production 

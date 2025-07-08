@@ -1,0 +1,36 @@
+version: "3.8"
+
+services:
+  gui-browser:
+    build: .
+    ports:
+      - "3001:3001" # Session management API
+    environment:
+      - DISPLAY=:1
+      - RESOLUTION=1920x1080
+    volumes:
+      - ./browser_sessions:/app/sessions
+      - ./logs:/app/logs
+    restart: unless-stopped
+    cap_add:
+      - SYS_ADMIN
+    security_opt:
+      - seccomp:unconfined
+    shm_size: 2gb
+    command: ["node", "backend/server.js"]
+
+  session-manager:
+    build:
+      context: .
+      dockerfile: Dockerfile.session-manager
+    ports:
+      - "3002:3002"
+    environment:
+      - NODE_ENV=production
+      - GUI_BROWSER_URL=http://gui-browser:3001
+    volumes:
+      - ./session_data:/app/session_data
+      - ./logs:/app/logs
+    restart: unless-stopped
+    depends_on:
+      - gui-browser

@@ -1,0 +1,52 @@
+services:
+  - type: web
+    name: ftd-backend
+    env: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGODB_URI
+        fromDatabase:
+          name: mongodb
+          property: connectionString
+      - key: AGENTS_REPORT_URI
+        fromDatabase:
+          name: mongodb
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: JWT_EXPIRE
+        value: 30d
+      - key: PORT
+        value: 5000
+      - key: UPLOAD_PATH
+        value: ./uploads
+      - key: MAX_FILE_UPLOAD
+        value: 1000000
+      - key: RATE_LIMIT_WINDOW_MS
+        value: 900000
+      - key: RATE_LIMIT_MAX_REQUESTS
+        value: 100
+      - key: CORS_ORIGIN
+        value: https://ftd-omega.vercel.app
+      - key: PYTHONPATH
+        value: /app
+      - key: DISPLAY
+        value: :1
+      - key: XVFB_WHD
+        value: 1920x1080x24
+      - key: RESOLUTION
+        value: 1920x1080
+      - key: EC2_GUI_BROWSER_URL
+        value: http://localhost:3001
+      - key: RENDER_EXTERNAL_URL
+        value: https://ftd-copy.onrender.com
+    plan: starter
+    buildCommand: echo "Building with Docker"
+    startCommand: node backend/server.js
+
+databases:
+  - name: mongodb
+    databaseName: project-management
+    user: admin
