@@ -23,6 +23,7 @@ const agentFineRoutes = require("./routes/agentFines");
 const withdrawalRoutes = require("./routes/withdrawals");
 const errorHandler = require("./middleware/errorHandler");
 const SessionCleanupService = require("./services/sessionCleanupService");
+const AgentScraperService = require("./services/agentScraperService");
 const app = express();
 
 app.set("trust proxy", 1);
@@ -51,6 +52,14 @@ db.once("open", () => {
       console.log("✅ Session cleanup service initialized");
     } catch (error) {
       console.error("❌ Failed to initialize session cleanup service:", error);
+    }
+
+    try {
+      const agentScraperService = new AgentScraperService();
+      agentScraperService.initializeScheduledJob();
+      console.log("✅ Agent scraper service initialized");
+    } catch (error) {
+      console.error("❌ Failed to initialize agent scraper service:", error);
     }
   }
 });

@@ -1,9 +1,16 @@
 const express = require("express");
 const axios = require("axios");
 const { protect } = require("../middleware/auth");
+const AgentScraperService = require("../services/agentScraperService");
+
 const router = express.Router();
+
 const EXTERNAL_API_BASE =
   "https://agent-report-scraper.onrender.com/api/mongodb";
+
+// Initialize scraper service instance for manual operations
+const agentScraperService = new AgentScraperService();
+
 router.get("/", protect, async (req, res, next) => {
   try {
     if (req.user.role !== "admin") {
@@ -26,6 +33,80 @@ router.get("/", protect, async (req, res, next) => {
     });
   }
 });
+
+// Manual trigger for scraper (Admin only)
+router.post("/trigger-scraper", protect, async (req, res, next) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. Admin role required.",
+      });
+    }
+
+    console.log(
+      `🔧 Manual scraper trigger requested by user: ${req.user.email}`
+    );
+
+    const result = await agentScraperService.manualTrigger();
+
+    if (result.success) {
+      res.status(200).json({
+        success: true,
+        message: "Scraper triggered successfully",
+        data: {
+          duration: result.duration,
+          attempt: result.attempt,
+          response: result.response,
+        },
+      });
+    } else {
+      res.status(500).json({
+        success: false,
+        message: "Scraper failed to complete",
+        error: result.error,
+        data: {
+          duration: result.duration,
+          attempts: result.attempts,
+        },
+      });
+    }
+  } catch (error) {
+    console.error("Error triggering scraper:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "Failed to trigger scraper",
+      error: error.message,
+    });
+  }
+});
+
+// Get scraper service status (Admin only)
+router.get("/scraper-status", protect, async (req, res, next) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({
+        success: false,
+        message: "Access denied. Admin role required.",
+      });
+    }
+
+    const status = agentScraperService.getStatus();
+
+    res.status(200).json({
+      success: true,
+      data: status,
+    });
+  } catch (error) {
+    console.error("Error getting scraper status:", error.message);
+    res.status(500).json({
+      success: false,
+      message: "Failed to get scraper status",
+      error: error.message,
+    });
+  }
+});
+
 router.get("/:agentName/performance", protect, async (req, res, next) => {
   try {
     const { agentName } = req.params;

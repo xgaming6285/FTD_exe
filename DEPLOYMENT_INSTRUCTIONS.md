@@ -1,17 +1,20 @@
 # FTD VNC GUI Browser Session - Deployment Instructions
 
 ## Overview
+
 This guide provides step-by-step instructions for deploying the FTD VNC GUI Browser Session system on an EC2 instance. The system allows users to view and interact with GUI browser sessions through their web browsers using VNC streaming.
 
 ## Prerequisites
 
 ### EC2 Instance Requirements
+
 - **Instance Type**: t3.large or larger (minimum 2 vCPUs, 8GB RAM)
 - **Operating System**: Ubuntu 22.04 LTS
 - **Storage**: 30GB+ EBS volume
 - **Security Group**: Open ports 80, 443, 3001, 5901, 6080, 8080
 
 ### Security Group Configuration
+
 ```bash
 # HTTP/HTTPS
 Port 80 (HTTP) - 0.0.0.0/0
@@ -32,16 +35,19 @@ Port 22 (SSH) - Your IP only
 ## Step 1: Initial Server Setup
 
 ### 1.1 Connect to EC2 Instance
+
 ```bash
 ssh -i your-key.pem ubuntu@your-ec2-ip
 ```
 
 ### 1.2 Update System
+
 ```bash
 sudo apt update && sudo apt upgrade -y
 ```
 
 ### 1.3 Install Docker and Docker Compose
+
 ```bash
 # Install Docker
 curl -fsSL https://get.docker.com -o get-docker.sh
@@ -55,6 +61,7 @@ sudo chmod +x /usr/local/bin/docker-compose
 ```
 
 ### 1.4 Install Additional Dependencies
+
 ```bash
 sudo apt install -y git curl wget unzip python3 python3-pip nodejs npm
 ```
@@ -62,6 +69,7 @@ sudo apt install -y git curl wget unzip python3 python3-pip nodejs npm
 ## Step 2: Application Deployment
 
 ### 2.1 Clone Repository
+
 ```bash
 cd /home/ubuntu
 git clone https://github.com/your-repo/FTD_exe.git
@@ -69,12 +77,14 @@ cd FTD_exe
 ```
 
 ### 2.2 Create Required Directories
+
 ```bash
 mkdir -p browser_sessions logs ssl mongodb-init
 chmod 755 browser_sessions logs
 ```
 
 ### 2.3 Configure Environment Variables
+
 ```bash
 # Create .env file
 cat > .env << 'EOF'
@@ -84,9 +94,9 @@ DISPLAY=:1
 RESOLUTION=1920x1080
 
 # Database Configuration
-MONGODB_URI=mongodb://admin:your-mongo-password@mongodb:27017/ftd_database?authSource=admin
+MONGODB_URI=mongodb+srv://dani034406:Daniel6285@cluster0.g0vqepz.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0
 MONGO_INITDB_ROOT_USERNAME=admin
-MONGO_INITDB_ROOT_PASSWORD=your-mongo-password
+MONGO_INITDB_ROOT_PASSWORD=dani034406
 
 # API Configuration
 JWT_SECRET=your-jwt-secret-key-here
@@ -104,6 +114,7 @@ EOF
 ```
 
 ### 2.4 Install Python Dependencies
+
 ```bash
 pip3 install -r requirements.txt
 python3 -m playwright install chromium
@@ -113,17 +124,20 @@ python3 -m playwright install-deps
 ## Step 3: SSL Certificate Setup (Optional but Recommended)
 
 ### 3.1 Install Certbot
+
 ```bash
 sudo apt install -y certbot
 ```
 
 ### 3.2 Generate SSL Certificate
+
 ```bash
 # Replace with your domain
 sudo certbot certonly --standalone -d your-domain.com
 ```
 
 ### 3.3 Copy Certificates
+
 ```bash
 sudo cp /etc/letsencrypt/live/your-domain.com/fullchain.pem ./ssl/
 sudo cp /etc/letsencrypt/live/your-domain.com/privkey.pem ./ssl/
@@ -133,12 +147,14 @@ sudo chown ubuntu:ubuntu ./ssl/*.pem
 ## Step 4: Build and Deploy
 
 ### 4.1 Test the Deployment
+
 ```bash
 # Run the deployment test
 python3 test_vnc_deployment.py
 ```
 
 ### 4.2 Build Docker Images
+
 ```bash
 # Build VNC GUI Browser image
 docker build -f Dockerfile.vnc -t ftd-vnc-gui-browser .
@@ -153,6 +169,7 @@ cd ..
 ```
 
 ### 4.3 Start Services
+
 ```bash
 # Start with Docker Compose
 docker-compose -f docker-compose.vnc.yml up -d
@@ -162,6 +179,7 @@ docker-compose -f docker-compose.vnc.yml ps
 ```
 
 ### 4.4 Verify Deployment
+
 ```bash
 # Check container logs
 docker-compose -f docker-compose.vnc.yml logs vnc-gui-browser
@@ -174,17 +192,20 @@ curl http://localhost:8080
 ## Step 5: Configure Nginx (Production)
 
 ### 5.1 Update Nginx Configuration
+
 ```bash
 # Edit nginx.conf to match your domain
 nano nginx.conf
 ```
 
 ### 5.2 Test Nginx Configuration
+
 ```bash
 docker-compose -f docker-compose.vnc.yml exec nginx-proxy nginx -t
 ```
 
 ### 5.3 Reload Nginx
+
 ```bash
 docker-compose -f docker-compose.vnc.yml exec nginx-proxy nginx -s reload
 ```
@@ -192,11 +213,13 @@ docker-compose -f docker-compose.vnc.yml exec nginx-proxy nginx -s reload
 ## Step 6: Monitoring and Maintenance
 
 ### 6.1 Set Up Log Rotation
+
 ```bash
 sudo nano /etc/logrotate.d/ftd-vnc
 ```
 
 Add:
+
 ```
 /home/ubuntu/FTD_exe/logs/*.log {
     daily
@@ -210,11 +233,13 @@ Add:
 ```
 
 ### 6.2 Create Systemd Service (Optional)
+
 ```bash
 sudo nano /etc/systemd/system/ftd-vnc.service
 ```
 
 Add:
+
 ```ini
 [Unit]
 Description=FTD VNC GUI Browser Service
@@ -235,12 +260,14 @@ WantedBy=multi-user.target
 ```
 
 Enable service:
+
 ```bash
 sudo systemctl enable ftd-vnc
 sudo systemctl start ftd-vnc
 ```
 
 ### 6.3 Set Up Health Check Script
+
 ```bash
 cat > health_check.sh << 'EOF'
 #!/bin/bash
@@ -269,24 +296,30 @@ chmod +x health_check.sh
 ## Step 7: Integration with Existing Application
 
 ### 7.1 Update Backend Routes
+
 Ensure your backend routes in `backend/routes/gui-browser.js` point to the correct EC2 URL:
+
 ```javascript
 const EC2_GUI_BROWSER_URL = "http://your-ec2-ip:3001";
 ```
 
 ### 7.2 Update Frontend Configuration
+
 Update your React app to use the VNC viewer:
+
 ```javascript
 // In your frontend configuration
 const VNC_URL = "http://your-ec2-ip:8080";
 ```
 
 ### 7.3 Database Connection
+
 Ensure your main application can connect to the MongoDB instance running in the Docker setup.
 
 ## Step 8: Testing the Complete System
 
 ### 8.1 End-to-End Test
+
 1. Access your main application
 2. Create a new FTD lead
 3. Start a GUI browser session
@@ -296,6 +329,7 @@ Ensure your main application can connect to the MongoDB instance running in the 
 7. Verify session cleanup
 
 ### 8.2 Performance Testing
+
 ```bash
 # Monitor resource usage
 docker stats
@@ -309,6 +343,7 @@ docker-compose -f docker-compose.vnc.yml logs -f
 ### Common Issues
 
 #### 1. VNC Server Not Starting
+
 ```bash
 # Check display
 echo $DISPLAY
@@ -321,6 +356,7 @@ docker-compose -f docker-compose.vnc.yml restart vnc-gui-browser
 ```
 
 #### 2. Browser Not Launching
+
 ```bash
 # Check browser processes
 docker-compose -f docker-compose.vnc.yml exec vnc-gui-browser ps aux | grep chromium
@@ -330,6 +366,7 @@ docker-compose -f docker-compose.vnc.yml logs vnc-gui-browser
 ```
 
 #### 3. noVNC Connection Issues
+
 ```bash
 # Check websocket connection
 curl -H "Connection: Upgrade" -H "Upgrade: websocket" http://localhost:6080/websockify
@@ -339,6 +376,7 @@ docker-compose -f docker-compose.vnc.yml logs nginx-proxy
 ```
 
 #### 4. Session API Issues
+
 ```bash
 # Check API health
 curl -v http://localhost:3001/health
@@ -348,11 +386,13 @@ curl -X POST http://localhost:3001/sessions -H "Content-Type: application/json" 
 ```
 
 ### Log Locations
+
 - Application logs: `/home/ubuntu/FTD_exe/logs/`
 - Docker logs: `docker-compose -f docker-compose.vnc.yml logs [service]`
 - System logs: `/var/log/syslog`
 
 ### Performance Optimization
+
 1. Increase container memory limits if needed
 2. Use SSD storage for better I/O performance
 3. Configure swap file if memory is limited
@@ -369,6 +409,7 @@ curl -X POST http://localhost:3001/sessions -H "Content-Type: application/json" 
 ## Backup and Recovery
 
 ### Database Backup
+
 ```bash
 # Backup MongoDB
 docker-compose -f docker-compose.vnc.yml exec mongodb mongodump --out /backup
@@ -378,6 +419,7 @@ docker-compose -f docker-compose.vnc.yml exec redis redis-cli BGSAVE
 ```
 
 ### Application Backup
+
 ```bash
 # Backup application files
 tar -czf ftd-vnc-backup-$(date +%Y%m%d).tar.gz /home/ubuntu/FTD_exe
@@ -386,6 +428,7 @@ tar -czf ftd-vnc-backup-$(date +%Y%m%d).tar.gz /home/ubuntu/FTD_exe
 ## Scaling Considerations
 
 For high-traffic deployments:
+
 1. Use multiple EC2 instances with load balancer
 2. Separate database to RDS
 3. Use Redis Cluster for session management
@@ -404,10 +447,11 @@ For high-traffic deployments:
 This deployment guide provides a complete setup for the FTD VNC GUI Browser Session system. Follow the steps carefully and test thoroughly before production use. For any issues, refer to the troubleshooting section or check the application logs.
 
 Remember to:
+
 - Replace placeholder values with your actual configuration
 - Test the system thoroughly before production deployment
 - Set up proper monitoring and alerting
 - Keep backups of your configuration and data
 - Follow security best practices
 
-Your FTD VNC GUI Browser Session system should now be ready for production use! 
+Your FTD VNC GUI Browser Session system should now be ready for production use!
