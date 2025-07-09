@@ -1,0 +1,139 @@
+version: "3.8"
+
+services:
+  # VNC GUI Browser Service
+  vnc-gui-browser:
+    build:
+      context: .
+      dockerfile: Dockerfile.vnc
+    container_name: ftd-vnc-gui-browser
+    ports:
+      - "3001:3001" # Session API
+      - "6080:6080" # noVNC websocket
+      - "8080:8080" # noVNC web interface
+      - "5901:5901" # VNC server
+    environment:
+      - DISPLAY=:1
+      - VNC_DISPLAY=:1
+      - RESOLUTION=1920x1080
+      - VNC_PASSWORD=vncpassword
+      - NODE_ENV=production
+      - PYTHONPATH=/app
+    volumes:
+      - ./browser_sessions:/app/sessions
+      - ./logs:/app/logs
+      - ./vnc_web_interface.html:/app/vnc_web_interface.html
+      - /dev/shm:/dev/shm
+    restart: unless-stopped
+    cap_add:
+      - SYS_ADMIN
+      - NET_ADMIN
+    security_opt:
+      - seccomp:unconfined
+    shm_size: 2gb
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - ftd-network
+
+  # Nginx Reverse Proxy (Optional - for production)
+  nginx-proxy:
+    image: nginx:alpine
+    container_name: ftd-nginx-proxy
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - vnc-gui-browser
+    restart: unless-stopped
+    networks:
+      - ftd-network
+
+  # Redis for session management (Optional)
+  redis:
+    image: redis:7-alpine
+    container_name: ftd-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    restart: unless-stopped
+    networks:
+      - ftd-network
+
+  # MongoDB for data persistence
+  mongodb:
+    image: mongo:6.0
+    container_name: ftd-mongodb
+    ports:
+      - "27017:27017"
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=admin
+      - MONGO_INITDB_ROOT_PASSWORD=password123
+      - MONGO_INITDB_DATABASE=ftd_database
+    volumes:
+      - mongodb_data:/data/db
+      - ./mongodb-init:/docker-entrypoint-initdb.d
+    restart: unless-stopped
+    networks:
+      - ftd-network
+
+  # Backend API Service
+  backend-api:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: ftd-backend-api
+    ports:
+      - "5000:5000"
+    environment:
+      - NODE_ENV=production
+      - MONGODB_URI=mongodb://admin:password123@mongodb:27017/ftd_database?authSource=admin
+      - JWT_SECRET=your-jwt-secret-key
+      - JWT_EXPIRE=30d
+      - EC2_GUI_BROWSER_URL=http://vnc-gui-browser:3001
+      - REDIS_URL=redis://redis:6379
+    depends_on:
+      - mongodb
+      - redis
+      - vnc-gui-browser
+    restart: unless-stopped
+    networks:
+      - ftd-network
+
+  # Frontend (Optional - if serving from Docker)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: ftd-frontend
+    ports:
+      - "3000:3000"
+    environment:
+      - REACT_APP_API_URL=http://backend-api:5000/api
+      - REACT_APP_VNC_URL=http://vnc-gui-browser:8080
+    depends_on:
+      - backend-api
+    restart: unless-stopped
+    networks:
+      - ftd-network
+
+volumes:
+  mongodb_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  ftd-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

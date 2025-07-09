@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """
-GUI Browser Session Script
-This script launches a GUI Chromium browser for interactive FTD sessions.
-Unlike the headless version, this opens a real browser window that users can interact with.
+GUI Browser Session Script with VNC Support
+This script launches a GUI Chromium browser in kiosk mode for interactive FTD sessions.
+The browser is displayed on a VNC server that can be streamed to users' browsers.
 """
 
 import sys
@@ -30,7 +30,7 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
-class GUIBrowserSession:
+class VNCGUIBrowserSession:
     def __init__(self, session_data):
         self.session_data = session_data
         self.browser = None
@@ -38,68 +38,140 @@ class GUIBrowserSession:
         self.page = None
         self.session_active = True
         
+    def _get_device_config(self):
+        """Get device configuration for simulation"""
+        # Extract device info from session data
+        viewport = self.session_data.get('viewport', {'width': 1920, 'height': 1080})
+        user_agent = self.session_data.get('userAgent', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36')
+        
+        # Check if this is a mobile device simulation
+        is_mobile = 'Mobile' in user_agent or 'iPhone' in user_agent or 'Android' in user_agent
+        
+        # Device configuration
+        device_config = {
+            'viewport': viewport,
+            'user_agent': user_agent,
+            'is_mobile': is_mobile,
+            'has_touch': is_mobile,
+            'device_scale_factor': 3 if is_mobile else 1,
+            'locale': 'en-US',
+            'timezone_id': 'America/New_York'
+        }
+        
+        logger.info(f"🎭 Device simulation configured: {viewport['width']}x{viewport['height']}, mobile: {is_mobile}")
+        return device_config
+        
+    def _get_kiosk_browser_args(self):
+        """Get browser arguments for kiosk mode"""
+        viewport = self.session_data.get('viewport', {'width': 1920, 'height': 1080})
+        
+        # Base kiosk arguments
+        kiosk_args = [
+            '--kiosk',  # Full kiosk mode
+            '--start-fullscreen',
+            '--disable-infobars',
+            '--disable-session-crashed-bubble',
+            '--disable-restore-session-state',
+            '--disable-translate',
+            '--disable-features=TranslateUI',
+            '--no-first-run',
+            '--no-default-browser-check',
+            '--disable-default-apps',
+            '--disable-popup-blocking',
+            '--disable-prompt-on-repost',
+            '--disable-hang-monitor',
+            '--disable-background-networking',
+            '--disable-background-timer-throttling',
+            '--disable-backgrounding-occluded-windows',
+            '--disable-renderer-backgrounding',
+            '--disable-features=VizDisplayCompositor',
+            '--disable-ipc-flooding-protection',
+            '--disable-component-update',
+            '--disable-extensions',
+            '--disable-plugins',
+            '--disable-sync',
+            '--disable-web-security',
+            '--allow-running-insecure-content',
+            '--disable-blink-features=AutomationControlled',
+            '--no-sandbox',
+            '--disable-setuid-sandbox',
+            '--disable-dev-shm-usage',
+            '--disable-gpu-sandbox',
+            '--disable-software-rasterizer',
+            '--use-gl=swiftshader',
+            '--enable-features=UseOzonePlatform',
+            '--ozone-platform=x11',
+            '--force-device-scale-factor=1',
+            f'--window-size={viewport["width"]},{viewport["height"]}',
+            f'--display={os.environ.get("DISPLAY", ":1")}',
+            '--window-position=0,0'
+        ]
+        
+        # Add proxy configuration if available
+        proxy_config = self.session_data.get('proxy')
+        if proxy_config:
+            if 'server' in proxy_config:
+                # New format: server contains full URL
+                proxy_url = proxy_config['server']
+            else:
+                # Old format: build URL from host and port
+                proxy_url = f"http://{proxy_config['host']}:{proxy_config['port']}"
+            
+            kiosk_args.append(f'--proxy-server={proxy_url}')
+            logger.info(f"🔗 Kiosk mode using proxy: {proxy_url}")
+        
+        return kiosk_args
+        
     async def setup_browser(self):
-        """Initialize GUI browser with restored session data"""
+        """Initialize GUI browser with VNC display and kiosk mode"""
         try:
             session_id = self.session_data.get('sessionId')
             if not session_id:
                 raise ValueError("sessionId is required")
 
-            logger.info(f"🚀 Starting GUI browser session: {session_id}")
+            logger.info(f"🚀 Starting VNC GUI browser session: {session_id}")
+            
+            # Ensure VNC display is available
+            display = os.environ.get('DISPLAY', ':1')
+            logger.info(f"🖥️ Using display: {display}")
             
             # Create user data directory for this session
             user_data_dir = f"/app/sessions/{session_id}"
             os.makedirs(user_data_dir, exist_ok=True)
             
-            # Browser launch arguments for GUI mode
-            launch_args = [
-                '--no-sandbox',
-                '--disable-dev-shm-usage',
-                '--disable-gpu-sandbox',
-                '--disable-software-rasterizer',
-                '--disable-background-timer-throttling',
-                '--disable-backgrounding-occluded-windows',
-                '--disable-renderer-backgrounding',
-                '--disable-features=TranslateUI',
-                '--disable-ipc-flooding-protection',
-                '--enable-features=NetworkService,NetworkServiceLogging',
-                '--force-color-profile=srgb',
-                '--metrics-recording-only',
-                '--no-first-run',
-                '--password-store=basic',
-                '--use-mock-keychain',
-                '--disable-blink-features=AutomationControlled',
-                '--disable-web-security',
-                '--allow-running-insecure-content',
-                '--disable-features=VizDisplayCompositor',
-                '--start-maximized'
-            ]
+            # Get device configuration
+            device_config = self._get_device_config()
             
-            # Add proxy configuration if available
-            proxy_config = self.session_data.get('proxy')
-            if proxy_config:
-                proxy_url = f"http://{proxy_config['host']}:{proxy_config['port']}"
-                launch_args.append(f'--proxy-server={proxy_url}')
-                logger.info(f"🔗 Using proxy: {proxy_url}")
-            
-            # Add viewport configuration
-            viewport = self.session_data.get('viewport', {'width': 1920, 'height': 1080})
-            launch_args.append(f'--window-size={viewport["width"]},{viewport["height"]}')
+            # Get kiosk browser arguments
+            browser_args = self._get_kiosk_browser_args()
             
             playwright = await async_playwright().start()
             
-            # Use launch_persistent_context for user data directory
+            # Launch browser in kiosk mode
             context_options = {
-                'headless': False,  # GUI mode
-                'args': launch_args,
+                'headless': False,  # GUI mode for VNC
+                'args': browser_args,
                 'env': {
-                    'DISPLAY': ':1'
+                    'DISPLAY': display
                 },
-                'viewport': viewport,
-                'user_agent': self.session_data.get('userAgent', 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'),
-                'locale': 'en-US',
-                'timezone_id': 'America/New_York'
+                'viewport': device_config['viewport'],
+                'user_agent': device_config['user_agent'],
+                'is_mobile': device_config['is_mobile'],
+                'has_touch': device_config['has_touch'],
+                'device_scale_factor': device_config['device_scale_factor'],
+                'locale': device_config['locale'],
+                'timezone_id': device_config['timezone_id']
             }
+            
+            # Handle proxy authentication if needed
+            proxy_config = self.session_data.get('proxy')
+            if proxy_config and 'username' in proxy_config and 'password' in proxy_config:
+                context_options['proxy'] = {
+                    'server': proxy_config.get('server') or f"http://{proxy_config['host']}:{proxy_config['port']}",
+                    'username': proxy_config['username'],
+                    'password': proxy_config['password']
+                }
+                logger.info(f"🔐 Proxy authentication configured")
             
             # Launch persistent context with user data directory
             self.context = await playwright.chromium.launch_persistent_context(
@@ -110,30 +182,165 @@ class GUIBrowserSession:
             # Get the browser instance from the context
             self.browser = self.context.browser
             
-            # Restore session data
+            # Restore session data if available
             await self.restore_session_data()
             
             # Create new page
             self.page = await self.context.new_page()
             
-            logger.info("✅ GUI browser session initialized successfully")
+            # Set up page for kiosk mode
+            await self.setup_kiosk_page()
+            
+            logger.info("✅ VNC GUI browser session initialized successfully")
             return True
             
         except Exception as e:
-            logger.error(f"❌ Error setting up GUI browser: {e}")
+            logger.error(f"❌ Error setting up VNC GUI browser: {e}")
             return False
     
-    async def restore_session_data(self):
-        """Restore cookies, localStorage, and sessionStorage"""
+    async def setup_kiosk_page(self):
+        """Configure page for kiosk mode with enhanced security and device simulation"""
         try:
-            # Restore cookies
+            # Disable context menu and developer tools
+            await self.page.add_init_script("""
+                // Disable context menu
+                document.addEventListener('contextmenu', e => e.preventDefault());
+                
+                // Disable keyboard shortcuts
+                document.addEventListener('keydown', e => {
+                    // Disable F11, F12, Ctrl+Shift+I, etc.
+                    if (e.key === 'F11' || e.key === 'F12' || 
+                        (e.ctrlKey && e.shiftKey && e.key === 'I') ||
+                        (e.ctrlKey && e.shiftKey && e.key === 'C') ||
+                        (e.ctrlKey && e.shiftKey && e.key === 'J') ||
+                        (e.ctrlKey && e.key === 'u') ||
+                        (e.ctrlKey && e.key === 'U')) {
+                        e.preventDefault();
+                        return false;
+                    }
+                });
+                
+                // Disable text selection for kiosk mode
+                document.addEventListener('selectstart', e => e.preventDefault());
+                
+                // Add kiosk mode CSS
+                const style = document.createElement('style');
+                style.textContent = `
+                    * {
+                        -webkit-user-select: none;
+                        -moz-user-select: none;
+                        -ms-user-select: none;
+                        user-select: none;
+                    }
+                    
+                    input, textarea {
+                        -webkit-user-select: text;
+                        -moz-user-select: text;
+                        -ms-user-select: text;
+                        user-select: text;
+                    }
+                    
+                    body {
+                        overflow-x: hidden;
+                        cursor: default;
+                    }
+                `;
+                document.head.appendChild(style);
+                
+                // Hide scrollbars for cleaner kiosk experience
+                document.documentElement.style.scrollbarWidth = 'none';
+                document.documentElement.style.msOverflowStyle = 'none';
+                
+                // Add device simulation indicators if mobile
+                const userAgent = navigator.userAgent;
+                const isMobile = /Mobile|iPhone|iPad|Android/.test(userAgent);
+                
+                if (isMobile) {
+                    // Add mobile-specific kiosk behaviors
+                    document.addEventListener('touchstart', e => {
+                        // Prevent zoom on double tap
+                        if (e.touches.length > 1) {
+                            e.preventDefault();
+                        }
+                    });
+                    
+                    // Add viewport meta tag for mobile
+                    const viewport = document.querySelector('meta[name="viewport"]');
+                    if (!viewport) {
+                        const meta = document.createElement('meta');
+                        meta.name = 'viewport';
+                        meta.content = 'width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no';
+                        document.head.appendChild(meta);
+                    }
+                }
+            """)
+            
+            # Set viewport for device simulation
+            viewport = self.session_data.get('viewport', {'width': 1920, 'height': 1080})
+            await self.page.set_viewport_size(viewport['width'], viewport['height'])
+            
+            # Configure device-specific settings
+            device_config = self._get_device_config()
+            if device_config['is_mobile']:
+                # Mobile-specific kiosk configuration
+                await self.page.emulate_media(media='screen')
+                await self.page.set_extra_http_headers({
+                    'Accept-Language': 'en-US,en;q=0.9',
+                    'Accept-Encoding': 'gzip, deflate, br',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8'
+                })
+                logger.info(f"📱 Mobile kiosk mode configured: {viewport['width']}x{viewport['height']}")
+            else:
+                # Desktop-specific kiosk configuration
+                await self.page.emulate_media(media='screen')
+                logger.info(f"🖥️ Desktop kiosk mode configured: {viewport['width']}x{viewport['height']}")
+            
+            # Add kiosk mode event listeners
+            await self.page.evaluate("""
+                // Prevent page unload in kiosk mode
+                window.addEventListener('beforeunload', (e) => {
+                    e.preventDefault();
+                    return '';
+                });
+                
+                // Log kiosk mode activity
+                console.log('🎭 Kiosk mode activated with device simulation');
+            """)
+            
+            logger.info("🎭 Enhanced kiosk page configuration completed")
+            
+        except Exception as e:
+            logger.error(f"❌ Error setting up kiosk page: {e}")
+    
+    async def restore_session_data(self):
+        """Restore cookies and session data"""
+        try:
+            # Restore cookies if available
             cookies = self.session_data.get('cookies', [])
             if cookies:
                 await self.context.add_cookies(cookies)
                 logger.info(f"🍪 Restored {len(cookies)} cookies")
             
-            # Note: localStorage and sessionStorage will be restored after page navigation
+            # Restore localStorage and sessionStorage
+            local_storage = self.session_data.get('localStorage', {})
+            session_storage = self.session_data.get('sessionStorage', {})
             
+            if local_storage or session_storage:
+                # Create a temporary page to set storage
+                temp_page = await self.context.new_page()
+                await temp_page.goto('about:blank')
+                
+                # Set localStorage
+                for key, value in local_storage.items():
+                    await temp_page.evaluate(f'localStorage.setItem("{key}", "{value}")')
+                
+                # Set sessionStorage
+                for key, value in session_storage.items():
+                    await temp_page.evaluate(f'sessionStorage.setItem("{key}", "{value}")')
+                
+                await temp_page.close()
+                logger.info(f"💾 Restored localStorage ({len(local_storage)} items) and sessionStorage ({len(session_storage)} items)")
+                
         except Exception as e:
             logger.error(f"❌ Error restoring session data: {e}")
     
@@ -141,157 +348,122 @@ class GUIBrowserSession:
         """Navigate to the target domain"""
         try:
             domain = self.session_data.get('domain')
-            if domain:
-                if not domain.startswith(('http://', 'https://')):
-                    domain = f'https://{domain}'
-                target_url = domain
-                logger.info(f"🌐 Navigating to: {domain}")
-            else:
-                target_url = 'https://www.google.com'
-                logger.info("🌐 No domain specified, navigating to Google")
+            if not domain:
+                # Default to Google for testing
+                domain = 'https://www.google.com'
             
-            await self.page.goto(target_url, wait_until='domcontentloaded', timeout=30000)
+            # Ensure domain has protocol
+            if not domain.startswith(('http://', 'https://')):
+                domain = f'https://{domain}'
             
-            # Restore localStorage and sessionStorage after navigation
-            await self.restore_storage_data()
+            logger.info(f"🌐 Navigating to domain: {domain}")
+            await self.page.goto(domain, wait_until='domcontentloaded', timeout=30000)
             
-            # Refresh page to ensure storage data is loaded
-            await self.page.reload(wait_until='domcontentloaded')
+            # Wait for page to be fully loaded
+            await self.page.wait_for_load_state('networkidle', timeout=10000)
             
-            logger.info(f"✅ Successfully navigated to {target_url}")
+            logger.info("✅ Successfully navigated to domain")
             return True
             
         except Exception as e:
-            logger.error(f"❌ Error during navigation: {e}")
+            logger.error(f"❌ Error navigating to domain: {e}")
             return False
     
-    async def restore_storage_data(self):
-        """Restore localStorage and sessionStorage after page load"""
-        try:
-            # Restore localStorage
-            local_storage = self.session_data.get('localStorage', {})
-            if local_storage:
-                for key, value in local_storage.items():
-                    await self.page.evaluate(f'localStorage.setItem("{key}", "{value}")')
-                logger.info(f"💾 Restored {len(local_storage)} localStorage items")
-            
-            # Restore sessionStorage
-            session_storage = self.session_data.get('sessionStorage', {})
-            if session_storage:
-                for key, value in session_storage.items():
-                    await self.page.evaluate(f'sessionStorage.setItem("{key}", "{value}")')
-                logger.info(f"🗂️ Restored {len(session_storage)} sessionStorage items")
-                
-        except Exception as e:
-            logger.error(f"❌ Error restoring storage data: {e}")
-    
     async def setup_session_banner(self):
-        """Add session information banner to the page"""
+        """Add a session info banner to the page"""
         try:
             lead_info = self.session_data.get('leadInfo', {})
-            session_id = self.session_data.get('sessionId', 'Unknown')
+            session_id = self.session_data.get('sessionId')
             
-            banner_script = """
-                (info) => {
-                    // Remove existing banner
-                    const existingBanner = document.getElementById('ftd-session-banner');
-                    if (existingBanner) {
-                        existingBanner.remove();
-                    }
-
-                    const banner = document.createElement('div');
-                    banner.id = 'ftd-session-banner';
-                    banner.style.cssText = `
-                        position: fixed;
-                        top: 0;
-                        left: 0;
-                        right: 0;
-                        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                        color: white;
-                        padding: 12px 20px;
-                        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-                        font-size: 14px;
-                        z-index: 2147483647;
-                        box-shadow: 0 2px 10px rgba(0,0,0,0.3);
-                        display: flex;
-                        justify-content: space-between;
-                        align-items: center;
-                        border-bottom: 2px solid rgba(255,255,255,0.2);
-                    `;
-                    
-                    banner.innerHTML = `
-                        <div style="display: flex; align-items: center; gap: 20px;">
-                            <div style="font-weight: bold; font-size: 16px;">🎯 FTD Live Session</div>
-                            <div>Lead: ${info.leadName}</div>
-                            <div>Email: ${info.email}</div>
-                            <div>Session: ${info.sessionId.substring(0, 8)}...</div>
-                        </div>
-                        <button onclick="this.parentElement.style.display='none'" 
-                                style="background: rgba(255,255,255,0.2); border: none; color: white; padding: 8px 12px; border-radius: 4px; cursor: pointer; font-size: 14px;">
-                            ✕ Hide
-                        </button>
-                    `;
-                    
-                    document.body.appendChild(banner);
-                    
-                    // Adjust page content to avoid overlap
-                    document.body.style.paddingTop = '60px';
-                }
+            banner_html = f"""
+            <div id="session-banner" style="
+                position: fixed;
+                top: 0;
+                left: 0;
+                right: 0;
+                background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+                color: white;
+                padding: 8px 16px;
+                font-family: Arial, sans-serif;
+                font-size: 14px;
+                z-index: 999999;
+                box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+            ">
+                <div>
+                    <strong>🎯 FTD Session:</strong> {lead_info.get('firstName', '')} {lead_info.get('lastName', '')}
+                    {' | ' + lead_info.get('email', '') if lead_info.get('email') else ''}
+                </div>
+                <div style="font-size: 12px; opacity: 0.9;">
+                    Session: {session_id[:8]}...
+                </div>
+            </div>
             """
             
-            await self.page.evaluate(banner_script, {
-                'leadName': f"{lead_info.get('firstName', '')} {lead_info.get('lastName', '')}".strip() or 'Unknown',
-                'email': lead_info.get('email', 'N/A'),
-                'sessionId': session_id
-            })
+            await self.page.evaluate(f"""
+                const banner = document.createElement('div');
+                banner.innerHTML = `{banner_html}`;
+                document.body.appendChild(banner.firstElementChild);
+                
+                // Adjust body padding to account for banner
+                document.body.style.paddingTop = '50px';
+            """)
             
-            logger.info("✅ Session banner added to page")
+            logger.info("📋 Session banner added successfully")
             
         except Exception as e:
             logger.error(f"❌ Error adding session banner: {e}")
     
     async def keep_session_alive(self):
-        """Keep the browser session alive and monitor for closure"""
+        """Keep the session alive and monitor for activity"""
         try:
-            logger.info("🔄 GUI browser session is ready for user interaction")
-            logger.info("💡 Session Information:")
-            logger.info(f"   - Session ID: {self.session_data.get('sessionId')}")
-            logger.info(f"   - Lead: {self.session_data.get('leadInfo', {}).get('firstName', '')} {self.session_data.get('leadInfo', {}).get('lastName', '')}")
-            logger.info(f"   - Domain: {self.session_data.get('domain', 'N/A')}")
-            logger.info("   - GUI browser session started successfully")
+            logger.info("🔄 Session keep-alive started")
             
-            # Wait for browser to be closed
-            while self.session_active and self.browser and self.browser.is_connected():
-                await asyncio.sleep(5)
-                
-                # Check if browser is still alive
-                try:
-                    contexts = self.browser.contexts
-                    if not contexts:
-                        logger.info("🔚 Browser contexts closed, ending session")
-                        break
-                except:
-                    logger.info("🔚 Browser disconnected, ending session")
+            while self.session_active:
+                # Check if browser is still connected
+                if not self.browser or not self.browser.is_connected():
+                    logger.warning("⚠️ Browser disconnected, ending session")
                     break
+                
+                # Check if page is still available
+                if not self.page or self.page.is_closed():
+                    logger.warning("⚠️ Page closed, ending session")
+                    break
+                
+                # Keep session alive
+                await asyncio.sleep(30)
+                
+                # Optional: Take periodic screenshots for monitoring
+                try:
+                    screenshot_path = f"/app/logs/session_{self.session_data.get('sessionId')}_screenshot.png"
+                    await self.page.screenshot(path=screenshot_path)
+                    logger.debug(f"📸 Screenshot saved: {screenshot_path}")
+                except Exception as screenshot_error:
+                    logger.debug(f"📸 Screenshot failed: {screenshot_error}")
             
-            logger.info("🔚 GUI browser session ended")
+            logger.info("🔄 Session keep-alive ended")
             
         except Exception as e:
-            logger.error(f"❌ Error during session monitoring: {e}")
+            logger.error(f"❌ Error in keep-alive: {e}")
     
     async def cleanup(self):
         """Clean up browser resources"""
         try:
+            self.session_active = False
+            
             if self.browser:
                 await self.browser.close()
                 logger.info("🧹 Browser resources cleaned up")
+                
         except Exception as e:
             logger.error(f"❌ Error during cleanup: {e}")
     
     async def run(self):
         """Main execution flow"""
         try:
-            logger.info("🎯 Starting GUI browser session...")
+            logger.info("🎯 Starting VNC GUI browser session...")
             
             if not await self.setup_browser():
                 logger.error("❌ Failed to setup browser")
@@ -309,14 +481,14 @@ class GUIBrowserSession:
             return True
             
         except Exception as e:
-            logger.error(f"❌ Error during GUI browser session: {e}")
+            logger.error(f"❌ Error during VNC GUI browser session: {e}")
             return False
         finally:
             await self.cleanup()
 
 def signal_handler(signum, frame):
-    """Handle shutdown signals"""
-    logger.info(f"🛑 Received signal {signum}, shutting down...")
+    """Handle termination signals"""
+    logger.info(f"🛑 Received signal {signum}, shutting down gracefully...")
     sys.exit(0)
 
 def main():
@@ -326,7 +498,7 @@ def main():
         signal.signal(signal.SIGTERM, signal_handler)
         signal.signal(signal.SIGINT, signal_handler)
         
-        parser = argparse.ArgumentParser(description='Launch GUI browser session for FTD lead')
+        parser = argparse.ArgumentParser(description='Launch VNC GUI browser session for FTD lead')
         parser.add_argument('session_data', help='JSON string containing session data')
         parser.add_argument('--debug', action='store_true', help='Enable debug logging')
         args = parser.parse_args()
@@ -345,18 +517,18 @@ def main():
             logger.error("❌ Missing required field: 'sessionId'")
             sys.exit(1)
             
-        browser_session = GUIBrowserSession(session_data)
+        browser_session = VNCGUIBrowserSession(session_data)
         success = asyncio.run(browser_session.run())
 
         if success:
-            logger.info("✅ GUI browser session completed successfully")
+            logger.info("✅ VNC GUI browser session completed successfully")
             sys.exit(0)
         else:
-            logger.error("❌ GUI browser session failed")
+            logger.error("❌ VNC GUI browser session failed")
             sys.exit(1)
 
     except KeyboardInterrupt:
-        logger.info("🛑 GUI browser session interrupted by user")
+        logger.info("🛑 VNC GUI browser session interrupted by user")
         sys.exit(0)
     except Exception as e:
         logger.error(f"💥 Unexpected error: {e}")

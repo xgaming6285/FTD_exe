@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Session API
-FastAPI service to manage GUI browser sessions on EC2 instance
+Session API with VNC Support
+FastAPI service to manage GUI browser sessions with VNC streaming on EC2 instance
 """
 
 import os
@@ -13,7 +13,9 @@ import signal
 import uuid
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Request
+from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 import uvicorn
 
@@ -46,37 +48,65 @@ class SessionResponse(BaseModel):
     message: str
     sessionId: str
     sessionStatus: str
+    vncUrl: Optional[str] = None
+    vncPort: Optional[int] = None
 
-class SessionStatus(BaseModel):
+class SessionStatusResponse(BaseModel):
     sessionId: str
     status: str
     startTime: datetime
     lastActivity: datetime
-    leadInfo: Dict
+    vncUrl: Optional[str] = None
+    vncPort: Optional[int] = None
+    leadInfo: Dict = {}
 
 # Global session management
 active_sessions: Dict[str, Dict] = {}
-app = FastAPI(title="FTD GUI Browser Session API", version="1.0.0")
+vnc_port_counter = 5902  # Start from 5902 (5901 is used by display :1)
 
+app = FastAPI(title="FTD GUI Browser Session API with VNC", version="2.0.0")
 
+def get_next_vnc_port():
+    """Get the next available VNC port"""
+    global vnc_port_counter
+    port = vnc_port_counter
+    vnc_port_counter += 1
+    return port
 
-async def start_browser_session(session_data: SessionData) -> bool:
-    """Start GUI browser session in background"""
+def get_vnc_url(session_id: str, request: Request) -> str:
+    """Generate VNC URL for a session"""
+    base_url = f"{request.url.scheme}://{request.url.netloc}"
+    return f"{base_url}/vnc/{session_id}"
+
+async def start_browser_session(session_data: SessionData, request: Request) -> Dict:
+    """Start VNC GUI browser session in background"""
     try:
         session_id = session_data.sessionId
-        logger.info(f"🚀 Starting GUI browser session: {session_id}")
+        logger.info(f"🚀 Starting VNC GUI browser session: {session_id}")
+        
+        # Get VNC port for this session
+        vnc_port = get_next_vnc_port()
         
         # Prepare session data for Python script
         session_json = session_data.json()
         
-        # Start the GUI browser session script
+        # Start the VNC GUI browser session script
         process = subprocess.Popen([
             'python3', '/app/gui_browser_session.py', session_json
         ], 
         stdout=subprocess.PIPE, 
         stderr=subprocess.PIPE,
-        preexec_fn=os.setsid  # Create new process group
+        preexec_fn=os.setsid,  # Create new process group
+        env={
+            **os.environ,
+            'DISPLAY': ':1',
+            'VNC_PORT': str(vnc_port),
+            'SESSION_ID': session_id
+        }
         )
+        
+        # Generate VNC URL
+        vnc_url = get_vnc_url(session_id, request)
         
         # Store session info
         active_sessions[session_id] = {
@@ -84,30 +114,43 @@ async def start_browser_session(session_data: SessionData) -> bool:
             'startTime': datetime.now(),
             'lastActivity': datetime.now(),
             'status': 'starting',
-            'sessionData': session_data.dict()
+            'sessionData': session_data.dict(),
+            'vncPort': vnc_port,
+            'vncUrl': vnc_url
         }
         
         # Wait a bit to check if process started successfully
-        await asyncio.sleep(2)
+        await asyncio.sleep(3)
         
         if process.poll() is None:  # Process is still running
             active_sessions[session_id]['status'] = 'active'
-            logger.info(f"✅ GUI browser session started successfully: {session_id}")
-            return True
+            logger.info(f"✅ VNC GUI browser session started successfully: {session_id}")
+            logger.info(f"🖥️ VNC URL: {vnc_url}")
+            return {
+                'success': True,
+                'vncUrl': vnc_url,
+                'vncPort': vnc_port
+            }
         else:
             # Process died, get error output
             stdout, stderr = process.communicate()
-            logger.error(f"❌ GUI browser session failed to start: {stderr.decode()}")
+            logger.error(f"❌ VNC GUI browser session failed to start: {stderr.decode()}")
             if session_id in active_sessions:
                 del active_sessions[session_id]
-            return False
+            return {
+                'success': False,
+                'error': stderr.decode()
+            }
             
     except Exception as e:
-        logger.error(f"❌ Error starting browser session: {e}")
-        return False
+        logger.error(f"❌ Error starting VNC browser session: {e}")
+        return {
+            'success': False,
+            'error': str(e)
+        }
 
 async def stop_browser_session(session_id: str) -> bool:
-    """Stop GUI browser session"""
+    """Stop a browser session"""
     try:
         if session_id not in active_sessions:
             logger.warning(f"⚠️ Session not found: {session_id}")
@@ -116,46 +159,47 @@ async def stop_browser_session(session_id: str) -> bool:
         session_info = active_sessions[session_id]
         process = session_info['process']
         
-        logger.info(f"🛑 Stopping GUI browser session: {session_id}")
+        logger.info(f"🛑 Stopping VNC GUI browser session: {session_id}")
         
-        # Try graceful shutdown first
+        # Terminate the process group
         try:
             os.killpg(os.getpgid(process.pid), signal.SIGTERM)
-            await asyncio.sleep(5)
-        except:
+            
+            # Wait for graceful shutdown
+            await asyncio.sleep(2)
+            
+            # Force kill if still running
+            if process.poll() is None:
+                os.killpg(os.getpgid(process.pid), signal.SIGKILL)
+                
+        except ProcessLookupError:
+            # Process already terminated
             pass
         
-        # Force kill if still running
-        if process.poll() is None:
-            try:
-                os.killpg(os.getpgid(process.pid), signal.SIGKILL)
-            except:
-                pass
+        # Update session status
+        session_info['status'] = 'stopped'
+        session_info['lastActivity'] = datetime.now()
         
-        # Clean up session
-        active_sessions[session_id]['status'] = 'stopped'
-        del active_sessions[session_id]
-        
-        logger.info(f"✅ GUI browser session stopped: {session_id}")
+        logger.info(f"✅ VNC GUI browser session stopped: {session_id}")
         return True
         
     except Exception as e:
-        logger.error(f"❌ Error stopping browser session: {e}")
+        logger.error(f"❌ Error stopping session {session_id}: {e}")
         return False
 
-# API Routes
 @app.get("/")
 async def root():
-    """API health check"""
-    return {
-        "message": "FTD GUI Browser Session API", 
-        "status": "running",
-        "active_sessions": len(active_sessions)
-    }
+    """Root endpoint"""
+    return {"message": "FTD GUI Browser Session API with VNC", "version": "2.0.0", "status": "running"}
+
+@app.get("/health")
+async def health_check():
+    """Health check endpoint"""
+    return {"status": "healthy", "timestamp": datetime.now().isoformat()}
 
 @app.post("/sessions", response_model=SessionResponse)
-async def create_session(session_data: SessionData, background_tasks: BackgroundTasks):
-    """Create a new GUI browser session"""
+async def create_session(session_data: SessionData, request: Request, background_tasks: BackgroundTasks):
+    """Create a new VNC GUI browser session"""
     try:
         session_id = session_data.sessionId
         
@@ -170,19 +214,21 @@ async def create_session(session_data: SessionData, background_tasks: Background
             )
         
         # Start browser session
-        success = await start_browser_session(session_data)
+        result = await start_browser_session(session_data, request)
         
-        if success:
+        if result['success']:
             return SessionResponse(
                 success=True,
-                message="GUI browser session created successfully",
+                message="VNC GUI browser session created successfully",
                 sessionId=session_id,
-                sessionStatus="active"
+                sessionStatus="active",
+                vncUrl=result['vncUrl'],
+                vncPort=result['vncPort']
             )
         else:
             return SessionResponse(
                 success=False,
-                message="Failed to create GUI browser session",
+                message=f"Failed to create VNC GUI browser session: {result.get('error', 'Unknown error')}",
                 sessionId=session_id,
                 sessionStatus="error"
             )
@@ -191,9 +237,9 @@ async def create_session(session_data: SessionData, background_tasks: Background
         logger.error(f"❌ Error creating session: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.get("/sessions/{session_id}", response_model=SessionStatus)
+@app.get("/sessions/{session_id}", response_model=SessionStatusResponse)
 async def get_session_status(session_id: str):
-    """Get status of a specific session"""
+    """Get session status"""
     try:
         if session_id not in active_sessions:
             raise HTTPException(status_code=404, detail="Session not found")
@@ -205,11 +251,13 @@ async def get_session_status(session_id: str):
         if process.poll() is not None:
             session_info['status'] = 'stopped'
         
-        return SessionStatus(
+        return SessionStatusResponse(
             sessionId=session_id,
             status=session_info['status'],
             startTime=session_info['startTime'],
             lastActivity=session_info['lastActivity'],
+            vncUrl=session_info.get('vncUrl'),
+            vncPort=session_info.get('vncPort'),
             leadInfo=session_info['sessionData'].get('leadInfo', {})
         )
         
@@ -220,20 +268,20 @@ async def get_session_status(session_id: str):
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.delete("/sessions/{session_id}")
-async def delete_session(session_id: str):
-    """Stop and delete a session"""
+async def stop_session(session_id: str):
+    """Stop a session"""
     try:
         success = await stop_browser_session(session_id)
         
         if success:
-            return {"message": f"Session {session_id} stopped successfully"}
+            return {"success": True, "message": f"Session {session_id} stopped successfully"}
         else:
             raise HTTPException(status_code=404, detail="Session not found")
             
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"❌ Error deleting session: {e}")
+        logger.error(f"❌ Error stopping session: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 @app.get("/sessions")
@@ -250,31 +298,92 @@ async def list_sessions():
             sessions.append({
                 'sessionId': session_id,
                 'status': session_info['status'],
-                'startTime': session_info['startTime'],
-                'lastActivity': session_info['lastActivity'],
+                'startTime': session_info['startTime'].isoformat(),
+                'lastActivity': session_info['lastActivity'].isoformat(),
+                'vncUrl': session_info.get('vncUrl'),
+                'vncPort': session_info.get('vncPort'),
                 'leadInfo': session_info['sessionData'].get('leadInfo', {})
             })
         
-        return {"sessions": sessions, "total": len(sessions)}
+        return {
+            "success": True,
+            "sessions": sessions,
+            "totalSessions": len(sessions)
+        }
         
     except Exception as e:
         logger.error(f"❌ Error listing sessions: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
+@app.get("/vnc/{session_id}", response_class=HTMLResponse)
+async def vnc_viewer(session_id: str, request: Request):
+    """Serve VNC viewer for a specific session"""
+    try:
+        if session_id not in active_sessions:
+            return HTMLResponse(
+                content=f"<h1>Session Not Found</h1><p>Session {session_id} does not exist or has expired.</p>",
+                status_code=404
+            )
+        
+        session_info = active_sessions[session_id]
+        lead_info = session_info['sessionData'].get('leadInfo', {})
+        
+        # Read the VNC web interface template
+        try:
+            with open('/app/vnc_web_interface.html', 'r') as f:
+                html_content = f.read()
+        except FileNotFoundError:
+            # Fallback to basic HTML if template not found
+            html_content = f"""
+            <!DOCTYPE html>
+            <html>
+            <head>
+                <title>VNC Session {session_id}</title>
+                <style>
+                    body {{ font-family: Arial, sans-serif; margin: 20px; }}
+                    .container {{ max-width: 800px; margin: 0 auto; }}
+                    .error {{ color: red; padding: 20px; border: 1px solid red; background: #ffe6e6; }}
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <h1>VNC Session {session_id}</h1>
+                    <p>Lead: {lead_info.get('firstName', '')} {lead_info.get('lastName', '')}</p>
+                    <p>Email: {lead_info.get('email', 'N/A')}</p>
+                    <p>VNC Port: {session_info.get('vncPort', 'N/A')}</p>
+                    <div class="error">
+                        <h3>VNC Interface Not Available</h3>
+                        <p>The VNC web interface template is not available. Please check the deployment.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+            """
+        
+        return HTMLResponse(content=html_content)
+        
+    except Exception as e:
+        logger.error(f"❌ Error serving VNC viewer: {e}")
+        return HTMLResponse(
+            content=f"<h1>Error</h1><p>An error occurred while loading the VNC viewer: {str(e)}</p>",
+            status_code=500
+        )
+
 @app.post("/sessions/{session_id}/activity")
 async def update_session_activity(session_id: str):
-    """Update last activity time for a session"""
+    """Update session activity timestamp"""
     try:
         if session_id not in active_sessions:
             raise HTTPException(status_code=404, detail="Session not found")
         
         active_sessions[session_id]['lastActivity'] = datetime.now()
-        return {"message": "Activity updated"}
+        
+        return {"success": True, "message": "Activity updated"}
         
     except HTTPException:
         raise
     except Exception as e:
-        logger.error(f"❌ Error updating session activity: {e}")
+        logger.error(f"❌ Error updating activity: {e}")
         raise HTTPException(status_code=500, detail=str(e))
 
 # Background cleanup task
@@ -314,23 +423,42 @@ async def cleanup_inactive_sessions():
         # Wait 10 minutes before next cleanup
         await asyncio.sleep(600)
 
+# Start cleanup task
 @app.on_event("startup")
 async def startup_event():
     """Start background tasks"""
-    logger.info("🚀 Starting FTD GUI Browser Session API")
-    
-    # Start cleanup task
     asyncio.create_task(cleanup_inactive_sessions())
+    logger.info("🚀 VNC GUI Browser Session API started")
 
 @app.on_event("shutdown")
 async def shutdown_event():
     """Clean up on shutdown"""
-    logger.info("🛑 Shutting down FTD GUI Browser Session API")
+    logger.info("🛑 Shutting down VNC GUI Browser Session API")
     
     # Stop all active sessions
     for session_id in list(active_sessions.keys()):
         await stop_browser_session(session_id)
+    
+    logger.info("✅ All sessions stopped, API shutdown complete")
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 3001))
-    uvicorn.run(app, host="0.0.0.0", port=port, log_level="info") 
+    import argparse
+    
+    parser = argparse.ArgumentParser(description='VNC GUI Browser Session API')
+    parser.add_argument('--host', default='0.0.0.0', help='Host to bind to')
+    parser.add_argument('--port', type=int, default=3001, help='Port to bind to')
+    parser.add_argument('--debug', action='store_true', help='Enable debug logging')
+    
+    args = parser.parse_args()
+    
+    if args.debug:
+        logging.getLogger().setLevel(logging.DEBUG)
+    
+    logger.info(f"🚀 Starting VNC GUI Browser Session API on {args.host}:{args.port}")
+    
+    uvicorn.run(
+        app,
+        host=args.host,
+        port=args.port,
+        log_level="info" if not args.debug else "debug"
+    ) 
